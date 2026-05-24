@@ -50,7 +50,6 @@ dependencies = [
   "torchsde",                             # diffusers needs this for SDE solvers, but it is not an explicit dep of diffusers
   "torchvision",
   "transformers>=4.56.0",
-
   # Core application dependencies, pinned for reproducible builds.
   "fastapi-events",
   # FastAPI 0.119.0 breaks OpenAPI schema generation for the AnyInvocation class. It's not clear if this is an Invoke,
@@ -62,7 +61,6 @@ dependencies = [
   "pydantic",
   "python-socketio",
   "uvicorn[standard]",
-
   # Auxiliary dependencies, pinned only if necessary.
   "blake3",
   "bcrypt<4.0.0",
@@ -81,6 +79,7 @@ dependencies = [
   "requests",
   "semver~=3.0.1",
   "PyWavelets",
+  "ollama>=0.6.2",
 ]
 
 [project.optional-dependencies]

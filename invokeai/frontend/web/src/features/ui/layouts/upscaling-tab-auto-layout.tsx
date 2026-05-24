@@ -1,5 +1,6 @@
 import type { DockviewApi, GridviewApi, IDockviewReactProps, IGridviewReactProps } from 'dockview';
 import { DockviewReact, GridviewReact, LayoutPriority, Orientation } from 'dockview';
+import { ChatTab } from 'features/chat/components/ChatTab';
 import { BoardsPanel } from 'features/gallery/components/BoardsListPanelContent';
 import { GalleryPanel } from 'features/gallery/components/GalleryPanel';
 import { ImageViewerPanel } from 'features/gallery/components/ImageViewer/ImageViewerPanel';
@@ -27,6 +28,7 @@ import {
   BOARD_PANEL_DEFAULT_HEIGHT_PX,
   BOARD_PANEL_MIN_HEIGHT_PX,
   BOARDS_PANEL_ID,
+  CHAT_PANEL_ID,
   DOCKVIEW_TAB_ID,
   DOCKVIEW_TAB_LAUNCHPAD_ID,
   DOCKVIEW_TAB_PROGRESS_ID,
@@ -54,6 +56,7 @@ const tabComponents = {
 const mainPanelComponents: AutoLayoutDockviewComponents = {
   [LAUNCHPAD_PANEL_ID]: withPanelContainer(UpscalingLaunchpadPanel),
   [VIEWER_PANEL_ID]: withPanelContainer(ImageViewerPanel),
+  [CHAT_PANEL_ID]: withPanelContainer(ChatTab),
 };
 
 const initializeMainPanelLayout = (tab: TabName, api: DockviewApi) => {
@@ -85,8 +88,44 @@ const initializeMainPanelLayout = (tab: TabName, api: DockviewApi) => {
         referencePanel: launchpad.id,
       },
     });
+
+    api.addPanel<DockviewPanelParameters>({
+      id: CHAT_PANEL_ID,
+      component: CHAT_PANEL_ID,
+      title: 'AI Assistant',
+      tabComponent: DOCKVIEW_TAB_LAUNCHPAD_ID,
+      params: {
+        tab,
+        focusRegion: 'launchpad',
+        i18nKey: 'AI Assistant',
+      },
+      position: {
+        direction: 'within',
+        referencePanel: launchpad.id,
+      },
+    });
+
     launchpad.api.setActive();
   });
+
+  if (!api.getPanel(CHAT_PANEL_ID)) {
+    const launchpad = api.getPanel(LAUNCHPAD_PANEL_ID);
+    api.addPanel<DockviewPanelParameters>({
+      id: CHAT_PANEL_ID,
+      component: CHAT_PANEL_ID,
+      title: 'AI Assistant',
+      tabComponent: DOCKVIEW_TAB_LAUNCHPAD_ID,
+      params: {
+        tab,
+        focusRegion: 'launchpad',
+        i18nKey: 'AI Assistant',
+      },
+      position: launchpad ? {
+        direction: 'within',
+        referencePanel: launchpad.id,
+      } : undefined,
+    });
+  }
 };
 
 const MainPanel = memo(() => {

@@ -2,6 +2,7 @@ import type { SystemStyleObject } from '@invoke-ai/ui-library';
 import { Box, Divider, Flex, Heading, Tab, TabList, TabPanel, TabPanels, Tabs } from '@invoke-ai/ui-library';
 import { useStore } from '@nanostores/react';
 import { $installModelsTabIndex } from 'features/modelManagerV2/store/installModelsStore';
+import { CivitaiForm } from 'features/modelManagerV2/subpanels/AddModelPanel/CivitaiFolder/CivitaiForm';
 import { ExternalProvidersForm } from 'features/modelManagerV2/subpanels/AddModelPanel/ExternalProviders/ExternalProvidersForm';
 import { HuggingFaceForm } from 'features/modelManagerV2/subpanels/AddModelPanel/HuggingFaceFolder/HuggingFaceForm';
 import { InstallModelForm } from 'features/modelManagerV2/subpanels/AddModelPanel/InstallModelForm';
@@ -11,7 +12,7 @@ import { ScanModelsForm } from 'features/modelManagerV2/subpanels/AddModelPanel/
 import { StarterModelsForm } from 'features/modelManagerV2/subpanels/AddModelPanel/StarterModels/StarterModelsForm';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PiCubeBold, PiFolderOpenBold, PiLinkSimpleBold, PiPlugBold, PiShootingStarBold } from 'react-icons/pi';
+import { PiCubeBold, PiFolderOpenBold, PiImageBold,PiLinkSimpleBold, PiPlugBold, PiShootingStarBold } from 'react-icons/pi';
 import { SiHuggingface } from 'react-icons/si';
 
 const installModelsTabSx: SystemStyleObject = {
@@ -58,6 +59,10 @@ export const InstallModels = memo(() => {
             {t('modelManager.urlOrLocalPath')}
           </Tab>
           <Tab sx={installModelsTabSx}>
+            <PiImageBold />
+            CivitAI
+          </Tab>
+          <Tab sx={installModelsTabSx}>
             <SiHuggingface />
             {t('modelManager.huggingFace')}
           </Tab>
@@ -80,6 +85,9 @@ export const InstallModels = memo(() => {
           </TabPanel>
           <TabPanel>
             <InstallModelForm />
+          </TabPanel>
+          <TabPanel height="100%">
+            <CivitaiForm />
           </TabPanel>
           <TabPanel height="100%">
             <HuggingFaceForm />

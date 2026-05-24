@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import type { IconType } from 'react-icons';
 import {
   PiBoundingBoxBold,
+  PiChatCircleTextBold,
   PiCircuitryBold,
   PiCubeBold,
   PiFlowArrowBold,
@@ -28,6 +29,7 @@ const TAB_ICONS: Record<TabName, IconType> = {
   models: PiCubeBold,
   customNodes: PiCircuitryBold,
   queue: PiQueueBold,
+  chat: PiChatCircleTextBold,
 };
 
 export const DockviewTabLaunchpad = memo((props: IDockviewPanelHeaderProps<DockviewPanelParameters>) => {

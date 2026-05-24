@@ -131,6 +131,15 @@ class HuggingFaceMetadata(ModelMetadataWithFiles):
 
         return [x for x in self.files if x.path in paths]
 
+class CivitaiMetadata(ModelMetadataWithFiles):
+    """Extended metadata fields provided by Civitai."""
 
-AnyModelRepoMetadata = Annotated[Union[BaseMetadata, HuggingFaceMetadata], Field(discriminator="type")]
+    type: Literal["civitai"] = "civitai"
+    id: int = Field(description="The Civitai model version id")
+    api_response: Optional[str] = Field(description="Response from the Civitai API as stringified JSON", default=None)
+    model_id: Optional[int] = Field(description="The Civitai model id", default=None)
+    base_model: Optional[str] = Field(description="The base model for this version", default=None)
+
+
+AnyModelRepoMetadata = Annotated[Union[BaseMetadata, HuggingFaceMetadata, CivitaiMetadata], Field(discriminator="type")]
 AnyModelRepoMetadataValidator = TypeAdapter(AnyModelRepoMetadata)

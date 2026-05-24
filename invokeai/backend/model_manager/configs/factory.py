@@ -350,7 +350,7 @@ class ModelConfigFactory:
         """
 
         _overrides: dict[str, Any] = override_fields or {}
-        fields: dict[str, Any] = {}
+        fields: dict[str, Any] = _overrides.copy()
 
         if "type" in _overrides:
             fields["type"] = ModelType(_overrides["type"])

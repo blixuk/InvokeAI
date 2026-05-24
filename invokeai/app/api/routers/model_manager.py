@@ -191,6 +191,41 @@ async def list_model_records(
         )
     for index, model in enumerate(found_models):
         found_models[index] = prepare_model_config_for_response(model, ApiDependencies)
+
+    if model_type in [None, ModelType.TextLLM, ModelType.LlavaOnevision]:
+        try:
+            import requests
+            resp = requests.get("http://127.0.0.1:11434/api/tags", timeout=1)
+            if resp.status_code == 200:
+                from invokeai.backend.model_manager.configs.factory import AnyModelConfigValidator
+                from invokeai.backend.model_manager.taxonomy import ModelSourceType
+                
+                for m in resp.json().get("models", []):
+                    m_name = m["name"]
+                    
+                    types_to_add = [ModelType.TextLLM, ModelType.LlavaOnevision] if model_type is None else [model_type]
+                    
+                    for t in types_to_add:
+                        try:
+                            config_dict = {
+                                "path": "ollama",
+                                "name": f"Ollama: {m_name}",
+                                "base": BaseModelType.Any.value,
+                                "type": t.value,
+                                "format": ModelFormat.Diffusers.value,
+                                "key": f"ollama/{t.value}/{m_name}",
+                                "source": "ollama",
+                                "source_type": ModelSourceType.Url.value,
+                                "hash": f"ollama-mock-{t.value}",
+                                "file_size": 0,
+                            }
+                            config = AnyModelConfigValidator.validate_python(config_dict)
+                            found_models.append(config)
+                        except Exception as e:
+                            ApiDependencies.invoker.services.logger.error(f"Failed to validate Ollama model config: {e}")
+        except Exception as e:
+            ApiDependencies.invoker.services.logger.debug(f"Could not fetch Ollama models: {e}")
+
     return ModelsList(models=found_models)
 
 

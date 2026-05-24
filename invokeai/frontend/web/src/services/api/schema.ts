@@ -2786,6 +2786,66 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/chat/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Chat Models
+         * @description List available Ollama models
+         */
+        get: operations["list_chat_models"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chat/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Generate
+         * @description Generate a chat response using Ollama
+         */
+        post: operations["chat_generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chat/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Stream
+         * @description Generate a streaming chat response using Ollama
+         */
+        post: operations["chat_stream"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 };
 export type webhooks = Record<string, never>;
 export type components = {
@@ -5677,6 +5737,74 @@ export type components = {
              * @constant
              */
             type: "img_pad_crop";
+        };
+        /** ChatMessage */
+        ChatMessage: {
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Images */
+            images?: string[] | null;
+        };
+        /** ChatRequest */
+        ChatRequest: {
+            /** Model */
+            model: string;
+            /** Messages */
+            messages: components["schemas"]["ChatMessage"][];
+            /**
+             * Stream
+             * @default false
+             */
+            stream?: boolean | null;
+            /** Keep Alive */
+            keep_alive?: number | null;
+            /** Tools */
+            tools?: {
+                [key: string]: unknown;
+            }[] | null;
+        };
+        /**
+         * CivitaiMetadata
+         * @description Extended metadata fields provided by Civitai.
+         */
+        CivitaiMetadata: {
+            /**
+             * Name
+             * @description model's name
+             */
+            name: string;
+            /**
+             * Files
+             * @description model files and their sizes
+             */
+            files?: components["schemas"]["RemoteModelFile"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "civitai";
+            /**
+             * Id
+             * @description The Civitai model version id
+             */
+            id: number;
+            /**
+             * Api Response
+             * @description Response from the Civitai API as stringified JSON
+             */
+            api_response?: string | null;
+            /**
+             * Model Id
+             * @description The Civitai model id
+             */
+            model_id?: number | null;
+            /**
+             * Base Model
+             * @description The base model for this version
+             */
+            base_model?: string | null;
         };
         /**
          * Classification
@@ -23592,7 +23720,7 @@ export type components = {
              * Source Metadata
              * @description Metadata provided by the model source
              */
-            source_metadata?: (components["schemas"]["BaseMetadata"] | components["schemas"]["HuggingFaceMetadata"]) | null;
+            source_metadata?: (components["schemas"]["BaseMetadata"] | components["schemas"]["HuggingFaceMetadata"] | components["schemas"]["CivitaiMetadata"]) | null;
             /**
              * Download Parts
              * @description Download jobs contributing to this install
@@ -24697,6 +24825,12 @@ export type components = {
              * @description Negative prompt
              */
             negative_prompt: string;
+            /**
+             * Image As Style Reference
+             * @description Whether to use the image as a style reference
+             * @default false
+             */
+            image_as_style_reference?: boolean;
         };
         /**
          * PresetType
@@ -38367,6 +38501,92 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    list_chat_models: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    chat_generate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_stream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -18,6 +18,7 @@ class StylePresetNotFoundError(Exception):
 class PresetData(BaseModel, extra="forbid"):
     positive_prompt: str = Field(description="Positive prompt")
     negative_prompt: str = Field(description="Negative prompt")
+    image_as_style_reference: bool = Field(default=False, description="Whether to use the image as a style reference")
 
 
 PresetDataValidator = TypeAdapter(PresetData)

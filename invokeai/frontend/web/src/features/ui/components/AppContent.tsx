@@ -8,11 +8,13 @@ import Loading from 'common/components/Loading/Loading';
 import { useIsCustomNodesEnabled } from 'features/customNodes/useIsCustomNodesEnabled';
 import { VerticalNavBar } from 'features/ui/components/VerticalNavBar';
 import { CanvasTabAutoLayout } from 'features/ui/layouts/canvas-tab-auto-layout';
+import { ChatTabAutoLayout } from 'features/ui/layouts/chat-tab-auto-layout';
 import { CustomNodesTabAutoLayout } from 'features/ui/layouts/customnodes-tab-auto-layout';
 import { GenerateTabAutoLayout } from 'features/ui/layouts/generate-tab-auto-layout';
 import { ModelsTabAutoLayout } from 'features/ui/layouts/models-tab-auto-layout';
 import { navigationApi } from 'features/ui/layouts/navigation-api';
 import { QueueTabAutoLayout } from 'features/ui/layouts/queue-tab-auto-layout';
+import { TemplatesTabAutoLayout } from 'features/ui/layouts/templates-tab-auto-layout';
 import { UpscalingTabAutoLayout } from 'features/ui/layouts/upscaling-tab-auto-layout';
 import { WorkflowsTabAutoLayout } from 'features/ui/layouts/workflows-tab-auto-layout';
 import { selectActiveTab } from 'features/ui/store/uiSelectors';
@@ -52,6 +54,8 @@ const TabContent = memo(() => {
       {tab === 'models' && <ModelsTabAutoLayout />}
       {tab === 'customNodes' && isCustomNodesAllowed && <CustomNodesTabAutoLayout />}
       {tab === 'queue' && <QueueTabAutoLayout />}
+      {tab === 'chat' && <ChatTabAutoLayout />}
+      {tab === 'templates' && <TemplatesTabAutoLayout />}
       <SwitchingTabsLoader />
     </Flex>
   );

@@ -92,6 +92,20 @@ def _resolve_model_path(model_config_path: str) -> Path:
 
 def _run_expand_prompt(prompt: str, model_key: str, max_tokens: int, system_prompt: str | None) -> str:
     """Run text LLM inference synchronously (called from thread)."""
+    if model_key.startswith("ollama/"):
+        import ollama
+        ollama_model = model_key.split("/", 2)[2]
+        sys_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
+        with ollama.Client() as client:
+            response = client.chat(
+                model=ollama_model,
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response['message']['content']
+
     model_manager = ApiDependencies.invoker.services.model_manager
     model_config = model_manager.store.get_model(model_key)
 
@@ -161,6 +175,31 @@ class ImageToPromptResponse(BaseModel):
 
 def _run_image_to_prompt(image_name: str, model_key: str, instruction: str) -> str:
     """Run LLaVA OneVision inference synchronously (called from thread)."""
+    if model_key.startswith("ollama/"):
+        import ollama
+        from io import BytesIO
+        
+        ollama_model = model_key.split("/", 2)[2]
+        image = ApiDependencies.invoker.services.images.get_pil_image(image_name)
+        if image.mode not in ('RGB', 'L'):
+            image = image.convert("RGB")
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        image_bytes = buffer.getvalue()
+        
+        with ollama.Client() as client:
+            response = client.chat(
+                model=ollama_model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": instruction,
+                        "images": [image_bytes]
+                    }
+                ]
+            )
+            return response['message']['content']
+
     model_manager = ApiDependencies.invoker.services.model_manager
     model_config = model_manager.store.get_model(model_key)
 

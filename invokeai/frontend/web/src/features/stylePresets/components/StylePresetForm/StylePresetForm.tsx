@@ -1,11 +1,11 @@
-import { Box, Button, Flex, FormControl, FormLabel, Input, Spacer, Text } from '@invoke-ai/ui-library';
+import { Box, Button, Flex, FormControl, FormLabel, Input, Spacer, Switch, Text } from '@invoke-ai/ui-library';
 import { PRESET_PLACEHOLDER } from 'features/stylePresets/hooks/usePresetModifiedPrompts';
 import { $stylePresetModalState } from 'features/stylePresets/store/stylePresetModal';
 import { toast } from 'features/toast/toast';
 import type { PropsWithChildren } from 'react';
 import { useCallback } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { Trans, useTranslation } from 'react-i18next';
 import type { PresetType } from 'services/api/endpoints/stylePresets';
 import { useCreateStylePresetMutation, useUpdateStylePresetMutation } from 'services/api/endpoints/stylePresets';
@@ -19,6 +19,7 @@ export type StylePresetFormData = {
   negativePrompt: string;
   image: File | null;
   type: PresetType;
+  imageAsStyleReference: boolean;
 };
 
 export const StylePresetForm = ({
@@ -39,6 +40,7 @@ export const StylePresetForm = ({
       negativePrompt: '',
       image: null,
       type: 'user',
+      imageAsStyleReference: formData?.imageAsStyleReference ?? false,
     },
     mode: 'onChange',
   });
@@ -50,6 +52,7 @@ export const StylePresetForm = ({
           name: data.name,
           positive_prompt: data.positivePrompt,
           negative_prompt: data.negativePrompt,
+          image_as_style_reference: data.imageAsStyleReference,
           type: data.type,
         },
         image: data.image,
@@ -80,10 +83,34 @@ export const StylePresetForm = ({
     [updatingStylePresetId, updateStylePreset, createStylePreset]
   );
 
+  const renderStyleRefSwitch = useCallback(
+    ({ field }: { field: { value: boolean; onChange: (value: boolean) => void } }) => (
+      <FormControl
+        w="auto"
+        gap={2}
+        orientation="horizontal"
+        title="Use this image automatically as a Style Reference when the template is applied."
+      >
+        <FormLabel m={0} fontSize="sm" cursor="pointer" whiteSpace="nowrap">
+          Style Ref
+        </FormLabel>
+        <Switch size="sm" isChecked={field.value} onChange={field.onChange} />
+      </FormControl>
+    ),
+    []
+  );
+
   return (
     <Flex flexDir="column" gap={4}>
-      <Flex alignItems="center" gap={4}>
-        <StylePresetImageField control={control} name="image" />
+      <Flex alignItems="flex-start" gap={4}>
+        <Flex flexDir="column" gap={2} alignItems="center">
+          <StylePresetImageField control={control} name="image" />
+          <Controller
+            control={control}
+            name="imageAsStyleReference"
+            render={renderStyleRefSwitch}
+          />
+        </Flex>
         <FormControl orientation="vertical">
           <FormLabel>{t('stylePresets.name')}</FormLabel>
           <Input size="md" {...register('name', { required: true, minLength: 1 })} />

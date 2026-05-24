@@ -15,7 +15,7 @@ import {
 } from '@invoke-ai/ui-library';
 import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
 import { useDisclosure } from 'common/hooks/useBoolean';
-import { positivePromptChanged, selectPositivePrompt } from 'features/controlLayers/store/paramsSlice';
+import { positivePromptChanged, selectModelConfig,selectPositivePrompt } from 'features/controlLayers/store/paramsSlice';
 import { setInstallModelsTabByName } from 'features/modelManagerV2/store/installModelsStore';
 import { ModelPicker } from 'features/parameters/components/ModelPicker';
 import { setPromptUndo } from 'features/prompt/promptUndo';
@@ -35,6 +35,7 @@ export const ExpandPromptButton = memo(() => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const prompt = useAppSelector(selectPositivePrompt);
+  const activeModelConfig = useAppSelector(selectModelConfig);
   const [modelConfigs] = useTextLLMModels();
   const popover = useDisclosure(false);
   const [selectedModel, setSelectedModel] = useState<AnyModelConfig | undefined>(undefined);
@@ -50,10 +51,19 @@ export const ExpandPromptButton = memo(() => {
     if (!selectedModel || !prompt.trim()) {
       return;
     }
+
+    let system_prompt: string | undefined = "Output ONLY the raw prompt text. Do not include any conversational filler, markdown formatting, or options.";
+    if (activeModelConfig?.base === 'flux') {
+      system_prompt = "You are an expert prompt engineer. You are writing a prompt for the FLUX image generation model. FLUX models require highly descriptive, natural language prompts. Do not use negative prompts or generic tags. Instead, describe the scene, lighting, composition, and subjects in vivid, flowing sentences. Be highly specific about details. Output ONLY the raw prompt text. Do not include any conversational filler, titles, options, or markdown formatting.";
+    } else if (activeModelConfig?.base === 'sdxl') {
+      system_prompt = "You are an expert prompt engineer for SDXL. Format the prompt with detailed, comma-separated keywords and concepts. Prioritize subject, medium, style, resolution, and lighting. Output ONLY the raw keywords. Do not include any conversational filler, titles, options, or markdown formatting.";
+    }
+
     try {
       const result = await expandPrompt({
         prompt,
         model_key: selectedModel.key,
+        system_prompt,
       }).unwrap();
       if (result.expanded_prompt) {
         setPromptUndo(prompt);
@@ -63,7 +73,7 @@ export const ExpandPromptButton = memo(() => {
     } catch {
       // Error is handled by RTK Query
     }
-  }, [selectedModel, prompt, expandPrompt, dispatch, popover]);
+  }, [selectedModel, prompt, expandPrompt, dispatch, popover, activeModelConfig]);
 
   const handleOpenModelManager = useCallback(() => {
     popover.close();

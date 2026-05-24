@@ -1,5 +1,6 @@
 import { logger } from 'app/logging/logger';
 import type { AppDispatch, AppGetState } from 'app/store/store';
+import { $chatImages } from 'features/chat/store/chatStore';
 import { getDefaultRefImageConfig } from 'features/controlLayers/hooks/addLayerHooks';
 import { getPrefixedId } from 'features/controlLayers/konva/util';
 import { refImageAdded } from 'features/controlLayers/store/refImagesSlice';
@@ -586,6 +587,36 @@ export const removeImageFromBoardDndTarget: DndTarget<
 
 //#endregion
 
+//#region Add Image To Chat
+const _addImageToChat = buildTypeAndKey('add-image-to-chat');
+export type AddImageToChatDndTargetData = DndData<
+  typeof _addImageToChat.type,
+  typeof _addImageToChat.key,
+  void
+>;
+export const addImageToChatDndTarget: DndTarget<
+  AddImageToChatDndTargetData,
+  SingleImageDndSourceData
+> = {
+  ..._addImageToChat,
+  typeGuard: buildTypeGuard(_addImageToChat.key),
+  getData: buildGetData(_addImageToChat.key, _addImageToChat.type),
+  isValid: ({ sourceData }) => {
+    if (singleImageDndSource.typeGuard(sourceData)) {
+      return true;
+    }
+    return false;
+  },
+  handler: ({ sourceData }) => {
+    const { imageDTO } = sourceData.payload;
+    const current = $chatImages.get();
+    if (!current.includes(imageDTO.image_name)) {
+      $chatImages.set([...current, imageDTO.image_name]);
+    }
+  },
+};
+//#endregion
+
 export const dndTargets = [
   setGlobalReferenceImageDndTarget,
   addGlobalReferenceImageDndTarget,
@@ -599,6 +630,7 @@ export const dndTargets = [
   replaceCanvasEntityObjectsWithImageDndTarget,
   addImageToBoardDndTarget,
   removeImageFromBoardDndTarget,
+  addImageToChatDndTarget,
 ] as const;
 
 export type AnyDndTarget = (typeof dndTargets)[number];

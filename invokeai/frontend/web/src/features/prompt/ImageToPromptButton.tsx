@@ -17,7 +17,7 @@ import {
 import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
 import { useDisclosure } from 'common/hooks/useBoolean';
 import { useImageUploadButton } from 'common/hooks/useImageUploadButton';
-import { positivePromptChanged, selectPositivePrompt } from 'features/controlLayers/store/paramsSlice';
+import { positivePromptChanged, selectModelConfig,selectPositivePrompt } from 'features/controlLayers/store/paramsSlice';
 import { setInstallModelsTabByName } from 'features/modelManagerV2/store/installModelsStore';
 import { ModelPicker } from 'features/parameters/components/ModelPicker';
 import { setPromptUndo } from 'features/prompt/promptUndo';
@@ -42,6 +42,7 @@ export const ImageToPromptButton = memo(({ droppedImage, onClearDroppedImage }: 
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const currentPrompt = useAppSelector(selectPositivePrompt);
+  const activeModelConfig = useAppSelector(selectModelConfig);
   const [modelConfigs] = useLlavaModels();
   const popover = useDisclosure(false);
   const [selectedModel, setSelectedModel] = useState<AnyModelConfig | undefined>(undefined);
@@ -76,10 +77,19 @@ export const ImageToPromptButton = memo(({ droppedImage, onClearDroppedImage }: 
     if (!selectedModel || !uploadedImage) {
       return;
     }
+
+    let instruction = "Describe this image in detail for use as an AI image generation prompt. Output ONLY the raw prompt text with no conversational filler, no markdown formatting, and no options.";
+    if (activeModelConfig?.base === 'flux') {
+      instruction = "Analyze this image and describe it in vivid, natural language sentences. Do not use comma-separated keywords. Describe the subjects, setting, lighting, colors, and mood comprehensively as a single cohesive paragraph, suitable for generating a highly similar image with the FLUX image model. Output ONLY the raw prompt text. Do not include any conversational filler, titles, options, or markdown formatting.";
+    } else if (activeModelConfig?.base === 'sdxl') {
+      instruction = "Analyze this image and list the core concepts, subjects, art style, medium, and lighting as a detailed, comma-separated list of keywords, suitable for an SDXL image generation prompt. Output ONLY the raw keywords. Do not include any conversational filler, titles, options, or markdown formatting.";
+    }
+
     try {
       const result = await imageToPrompt({
         image_name: uploadedImage.image_name,
         model_key: selectedModel.key,
+        instruction,
       }).unwrap();
       if (result.prompt) {
         setPromptUndo(currentPrompt);
@@ -90,7 +100,7 @@ export const ImageToPromptButton = memo(({ droppedImage, onClearDroppedImage }: 
     } catch {
       // Error is handled by RTK Query
     }
-  }, [selectedModel, uploadedImage, imageToPrompt, dispatch, popover, currentPrompt]);
+  }, [selectedModel, uploadedImage, imageToPrompt, dispatch, popover, currentPrompt, activeModelConfig]);
 
   const handleClose = useCallback(() => {
     popover.close();

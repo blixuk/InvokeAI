@@ -1,5 +1,8 @@
 import { Badge, Button, Flex, IconButton, Spacer, Text } from '@invoke-ai/ui-library';
-import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
+import { useAppDispatch, useAppSelector, useAppStore } from 'app/store/storeHooks';
+import { getDefaultRefImageConfig } from 'features/controlLayers/hooks/addLayerHooks';
+import { refImageAdded } from 'features/controlLayers/store/refImagesSlice';
+import { imageDTOToCroppableImage } from 'features/controlLayers/store/util';
 import { useDeleteStylePreset } from 'features/stylePresets/components/DeleteStylePresetDialog';
 import { $stylePresetModalState } from 'features/stylePresets/store/stylePresetModal';
 import {
@@ -8,10 +11,12 @@ import {
   selectShowPromptPreviews,
   selectStylePresetActivePresetId,
 } from 'features/stylePresets/store/stylePresetSlice';
+import { toast } from 'features/toast/toast';
 import type { MouseEvent } from 'react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PiCopyBold, PiPencilBold, PiTrashBold } from 'react-icons/pi';
+import { uploadImage } from 'services/api/endpoints/images';
 import type { StylePresetRecordWithImage } from 'services/api/endpoints/stylePresets';
 
 import StylePresetImage from './StylePresetImage';
@@ -22,12 +27,13 @@ export const StylePresetListItem = ({ preset }: { preset: StylePresetRecordWithI
   const showPromptPreviews = useAppSelector(selectShowPromptPreviews);
   const { t } = useTranslation();
   const deleteStylePreset = useDeleteStylePreset();
+  const store = useAppStore();
 
   const handleClickEdit = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       const { name, preset_data } = preset;
-      const { positive_prompt, negative_prompt } = preset_data;
+      const { positive_prompt, negative_prompt, image_as_style_reference } = preset_data;
 
       $stylePresetModalState.set({
         prefilledFormData: {
@@ -36,6 +42,7 @@ export const StylePresetListItem = ({ preset }: { preset: StylePresetRecordWithI
           negativePrompt: negative_prompt || '',
           imageUrl: preset.image,
           type: preset.type,
+          imageAsStyleReference: image_as_style_reference || false,
         },
         updatingStylePresetId: preset.id,
         isModalOpen: true,
@@ -44,10 +51,41 @@ export const StylePresetListItem = ({ preset }: { preset: StylePresetRecordWithI
     [preset]
   );
 
-  const handleClickApply = useCallback(() => {
+  const handleClickApply = useCallback(async () => {
     dispatch(activeStylePresetIdChanged(preset.id));
     $isStylePresetsMenuOpen.set(false);
-  }, [dispatch, preset.id]);
+
+    if (preset.preset_data.image_as_style_reference && preset.image) {
+      try {
+        const response = await fetch(preset.image);
+        const blob = await response.blob();
+        const file = new File([blob], 'template_reference.png', { type: blob.type || 'image/png' });
+        
+        const imageDTO = await uploadImage({
+          file,
+          image_category: 'control',
+          is_intermediate: true,
+        });
+
+        const { getState } = store;
+        const config = getDefaultRefImageConfig(getState);
+        config.image = imageDTOToCroppableImage(imageDTO);
+        dispatch(refImageAdded({ overrides: { config } }));
+        
+        toast({
+          id: 'STYLE_REF_ADDED',
+          title: t('stylePresets.styleReferenceAdded') || 'Style Reference Added',
+          status: 'success',
+        });
+      } catch {
+        toast({
+          id: 'STYLE_REF_FAILED',
+          title: t('stylePresets.styleReferenceFailed') || 'Failed to add Style Reference',
+          status: 'error',
+        });
+      }
+    }
+  }, [dispatch, preset, t, store]);
 
   const handleClickDelete = useCallback(
     (e: MouseEvent<HTMLButtonElement>) => {
@@ -61,7 +99,7 @@ export const StylePresetListItem = ({ preset }: { preset: StylePresetRecordWithI
     (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       const { name, preset_data } = preset;
-      const { positive_prompt, negative_prompt } = preset_data;
+      const { positive_prompt, negative_prompt, image_as_style_reference } = preset_data;
 
       $stylePresetModalState.set({
         prefilledFormData: {
@@ -70,6 +108,7 @@ export const StylePresetListItem = ({ preset }: { preset: StylePresetRecordWithI
           negativePrompt: negative_prompt || '',
           imageUrl: preset.image,
           type: 'user',
+          imageAsStyleReference: image_as_style_reference || false,
         },
         updatingStylePresetId: null,
         isModalOpen: true,

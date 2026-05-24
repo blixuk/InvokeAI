@@ -9,10 +9,12 @@ import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   PiBoundingBoxBold,
+  PiChatCircleTextBold,
   PiCircuitryBold,
   PiCubeBold,
   PiFlowArrowBold,
   PiFrameCornersBold,
+  PiNotebookBold,
   PiQueueBold,
   PiTextAaBold,
 } from 'react-icons/pi';
@@ -33,12 +35,14 @@ export const VerticalNavBar = memo(() => {
         <TabButton tab="canvas" icon={<PiBoundingBoxBold />} label={t('ui.tabs.canvas')} />
         <TabButton tab="upscaling" icon={<PiFrameCornersBold />} label={t('ui.tabs.upscaling')} />
         <TabButton tab="workflows" icon={<PiFlowArrowBold />} label={t('ui.tabs.workflows')} />
+        <TabButton tab="chat" icon={<PiChatCircleTextBold />} label="Chat" />
       </Flex>
 
       <Spacer />
 
       <StatusIndicator />
       <TabButton tab="models" icon={<PiCubeBold />} label={t('ui.tabs.models')} />
+      <TabButton tab="templates" icon={<PiNotebookBold />} label={t('ui.tabs.templates')} />
       {isCustomNodesAllowed && (
         <TabButton tab="customNodes" icon={<PiCircuitryBold />} label={t('ui.tabs.customNodes')} />
       )}

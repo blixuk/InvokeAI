@@ -3331,6 +3331,7 @@
     },
     "ui": {
         "tabs": {
+            "templates": "Templates",
             "generate": "Generate",
             "canvas": "Canvas",
             "workflows": "Workflows",

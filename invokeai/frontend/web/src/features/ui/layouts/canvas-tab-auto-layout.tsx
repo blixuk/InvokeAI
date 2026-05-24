@@ -1,9 +1,11 @@
 import type { DockviewApi, GridviewApi, IDockviewReactProps, IGridviewReactProps } from 'dockview';
 import { DockviewReact, GridviewReact, LayoutPriority, Orientation } from 'dockview';
+import { ChatTab } from 'features/chat/components/ChatTab';
 import { CanvasLayersPanel } from 'features/controlLayers/components/CanvasLayersPanelContent';
 import { BoardsPanel } from 'features/gallery/components/BoardsListPanelContent';
 import { GalleryPanel } from 'features/gallery/components/GalleryPanel';
 import { ImageViewerPanel } from 'features/gallery/components/ImageViewer/ImageViewerPanel';
+import { TemplatesTab } from 'features/stylePresets/components/TemplatesTab';
 import { FloatingCanvasLeftPanelButtons } from 'features/ui/components/FloatingLeftPanelButtons';
 import { FloatingRightPanelButtons } from 'features/ui/components/FloatingRightPanelButtons';
 import type {
@@ -32,6 +34,7 @@ import {
   BOARD_PANEL_MIN_HEIGHT_PX,
   BOARDS_PANEL_ID,
   CANVAS_BOARD_PANEL_DEFAULT_HEIGHT_PX,
+  CHAT_PANEL_ID,
   DOCKVIEW_TAB_CANVAS_VIEWER_ID,
   DOCKVIEW_TAB_CANVAS_WORKSPACE_ID,
   DOCKVIEW_TAB_LAUNCHPAD_ID,
@@ -47,6 +50,7 @@ import {
   RIGHT_PANEL_ID,
   RIGHT_PANEL_MIN_SIZE_PX,
   SETTINGS_PANEL_ID,
+  TEMPLATES_PANEL_ID,
   VIEWER_PANEL_ID,
   WORKSPACE_PANEL_ID,
 } from './shared';
@@ -61,6 +65,8 @@ const mainPanelComponents: AutoLayoutDockviewComponents = {
   [LAUNCHPAD_PANEL_ID]: withPanelContainer(CanvasLaunchpadPanel),
   [WORKSPACE_PANEL_ID]: withPanelContainer(CanvasWorkspacePanel),
   [VIEWER_PANEL_ID]: withPanelContainer(ImageViewerPanel),
+  [CHAT_PANEL_ID]: withPanelContainer(ChatTab),
+  [TEMPLATES_PANEL_ID]: withPanelContainer(TemplatesTab),
 };
 
 const initializeCenterPanelLayout = (tab: TabName, api: DockviewApi) => {
@@ -109,8 +115,78 @@ const initializeCenterPanelLayout = (tab: TabName, api: DockviewApi) => {
       },
     });
 
+    api.addPanel<DockviewPanelParameters>({
+      id: CHAT_PANEL_ID,
+      component: CHAT_PANEL_ID,
+      title: 'AI Assistant',
+      tabComponent: DOCKVIEW_TAB_LAUNCHPAD_ID,
+      params: {
+        tab,
+        focusRegion: 'launchpad',
+        i18nKey: 'AI Assistant',
+      },
+      position: {
+        direction: 'within',
+        referencePanel: launchpad.id,
+      },
+    });
+
+    api.addPanel<DockviewPanelParameters>({
+      id: TEMPLATES_PANEL_ID,
+      component: TEMPLATES_PANEL_ID,
+      title: t('ui.tabs.templates'),
+      tabComponent: DOCKVIEW_TAB_LAUNCHPAD_ID,
+      params: {
+        tab,
+        focusRegion: 'launchpad',
+        i18nKey: 'ui.tabs.templates',
+      },
+      position: {
+        direction: 'within',
+        referencePanel: launchpad.id,
+      },
+    });
+
     launchpad.api.setActive();
   });
+
+  if (!api.getPanel(CHAT_PANEL_ID)) {
+    const launchpad = api.getPanel(LAUNCHPAD_PANEL_ID);
+    api.addPanel<DockviewPanelParameters>({
+      id: CHAT_PANEL_ID,
+      component: CHAT_PANEL_ID,
+      title: 'AI Assistant',
+      tabComponent: DOCKVIEW_TAB_LAUNCHPAD_ID,
+      params: {
+        tab,
+        focusRegion: 'launchpad',
+        i18nKey: 'AI Assistant',
+      },
+      position: launchpad ? {
+        direction: 'within',
+        referencePanel: launchpad.id,
+      } : undefined,
+    });
+  }
+
+  if (!api.getPanel(TEMPLATES_PANEL_ID)) {
+    const launchpad = api.getPanel(LAUNCHPAD_PANEL_ID);
+    api.addPanel<DockviewPanelParameters>({
+      id: TEMPLATES_PANEL_ID,
+      component: TEMPLATES_PANEL_ID,
+      title: t('ui.tabs.templates'),
+      tabComponent: DOCKVIEW_TAB_LAUNCHPAD_ID,
+      params: {
+        tab,
+        focusRegion: 'launchpad',
+        i18nKey: 'ui.tabs.templates',
+      },
+      position: launchpad ? {
+        direction: 'within',
+        referencePanel: launchpad.id,
+      } : undefined,
+    });
+  }
 };
 
 const MainPanel = memo(() => {

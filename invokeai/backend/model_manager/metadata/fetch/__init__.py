@@ -12,5 +12,6 @@ assert isinstance(data, HuggingFaceMetadata)
 
 from invokeai.backend.model_manager.metadata.fetch.fetch_base import ModelMetadataFetchBase
 from invokeai.backend.model_manager.metadata.fetch.huggingface import HuggingFaceMetadataFetch
+from invokeai.backend.model_manager.metadata.fetch.civitai import CivitaiMetadataFetch
 
-__all__ = ["ModelMetadataFetchBase", "HuggingFaceMetadataFetch"]
+__all__ = ["ModelMetadataFetchBase", "HuggingFaceMetadataFetch", "CivitaiMetadataFetch"]

@@ -54,6 +54,18 @@ The Unified Canvas is a fully integrated canvas implementation with support for 
 
 Invoke offers a fully featured workflow management solution, enabling users to combine the power of node-based workflows with the ease of a UI. This allows for customizable generation pipelines to be developed and shared by users looking to create specific workflows to support their production use-cases.
 
+### AI Assistant & Ollama Integration
+
+Invoke now features a built-in AI Assistant powered by Ollama. Communicate directly with a powerful local LLM from within the workspace. Features include full vision capabilities (chat with your generated images), rich markdown rendering with syntax-highlighted code blocks, and context-aware generation prompting.
+
+### Templates & Style Presets
+
+A dedicated Templates tab provides a full-page grid to create, edit, organize, and delete prompt templates and style presets. Includes a "Style Reference" toggle to automatically inject template cover images into the generation context via IP-Adapter or Kontext conditioning.
+
+### CivitAI Integration
+
+Streamlined downloading of models directly from CivitAI. Supports authenticated downloads for restricted content using API tokens, gracefully bypassing HTML login traps and ensuring seamless integration into the Model Manager.
+
 ### Board & Gallery Management
 
 Invoke features an organized gallery system for easily storing, accessing, and remixing your content in the Invoke workspace. Images can be dragged/dropped onto any Image-base UI element in the application, and rich metadata within the Image allows for easy recall of key prompts or settings used in your workflow.

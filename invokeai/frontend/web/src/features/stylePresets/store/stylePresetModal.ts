@@ -24,4 +24,5 @@ export type PrefilledFormData = {
   negativePrompt: string;
   imageUrl: string | null;
   type: PresetType;
+  imageAsStyleReference: boolean;
 };

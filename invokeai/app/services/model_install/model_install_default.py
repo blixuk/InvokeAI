@@ -14,6 +14,7 @@ from queue import Empty, Queue
 from shutil import move, rmtree
 from tempfile import mkdtemp
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
+from urllib.parse import urlparse, parse_qs
 
 import torch
 import yaml
@@ -54,12 +55,13 @@ from invokeai.backend.model_manager.configs.factory import (
 from invokeai.backend.model_manager.configs.unknown import Unknown_Config
 from invokeai.backend.model_manager.metadata import (
     AnyModelRepoMetadata,
+    CivitaiMetadataFetch,
     HuggingFaceMetadataFetch,
     ModelMetadataFetchBase,
     ModelMetadataWithFiles,
     RemoteModelFile,
 )
-from invokeai.backend.model_manager.metadata.metadata_base import HuggingFaceMetadata
+from invokeai.backend.model_manager.metadata.metadata_base import HuggingFaceMetadata, CivitaiMetadata
 from invokeai.backend.model_manager.search import ModelSearch
 from invokeai.backend.model_manager.taxonomy import (
     BaseModelType,
@@ -788,8 +790,12 @@ class ModelInstallService(ModelInstallServiceBase):
                 subfolder=Path(match.group(3)) if match.group(3) else None,
             )
         elif re.match(r"^https?://[^/]+", source):
+            parsed = urlparse(source)
+            qs = parse_qs(parsed.query)
+            access_token = qs.get("token", [None])[0]
             source_obj = URLModelSource(
                 url=Url(source),
+                access_token=access_token,
             )
         else:
             raise ValueError(f"Unsupported model source: '{source}'")
@@ -881,8 +887,32 @@ class ModelInstallService(ModelInstallServiceBase):
         job.config_in.source = str(job.source)
         job.config_in.source_type = MODEL_SOURCE_TO_TYPE_MAP[job.source.__class__]
         # enter the metadata, if there is any
-        if isinstance(job.source_metadata, (HuggingFaceMetadata)):
+        if isinstance(job.source_metadata, (HuggingFaceMetadata, CivitaiMetadata)):
             job.config_in.source_api_response = job.source_metadata.api_response
+            
+            if isinstance(job.source_metadata, CivitaiMetadata) and job.config_in.source_api_response:
+                import json
+                import re
+                try:
+                    civitai_data = json.loads(job.config_in.source_api_response)
+                    
+                    # Extract description
+                    if not job.config_in.description:
+                        desc = civitai_data.get("description")
+                        if not desc:
+                            desc = civitai_data.get("model", {}).get("description")
+                        if desc:
+                            desc = re.sub(r'<[^>]+>', '', desc)
+                            job.config_in.description = desc
+                            
+                    # Extract trigger phrases
+                    if not job.config_in.trigger_phrases:
+                        trained_words = civitai_data.get("trainedWords", [])
+                        if trained_words:
+                            job.config_in.trigger_phrases = set(trained_words)
+                            
+                except Exception as e:
+                    self._logger.warning(f"Failed to parse Civitai metadata for installation: {e}")
 
         if job._install_tmpdir is not None:
             self._delete_install_marker(job._install_tmpdir)
@@ -892,6 +922,32 @@ class ModelInstallService(ModelInstallServiceBase):
         else:
             key = self.install_path(job.local_path, job.config_in)
         job.config_out = self.record_store.get_model(key)
+        
+        # Download cover image if available
+        if isinstance(job.source_metadata, CivitaiMetadata) and job.config_in.source_api_response:
+            try:
+                import json
+                civitai_data = json.loads(job.config_in.source_api_response)
+                images = civitai_data.get("images", [])
+                if images and isinstance(images, list) and images[0].get("url"):
+                    image_url = images[0]["url"]
+                    model_images_path = self._app_config.models_path / "model_images"
+                    thumbnail_path = model_images_path / f"{key}.webp"
+                    if not thumbnail_path.exists():
+                        import requests
+                        from PIL import Image
+                        import io
+                        from invokeai.app.util.thumbnails import make_thumbnail
+                        
+                        model_images_path.mkdir(parents=True, exist_ok=True)
+                        resp = requests.get(image_url, timeout=10)
+                        resp.raise_for_status()
+                        img = Image.open(io.BytesIO(resp.content))
+                        thumbnail = make_thumbnail(img, 256)
+                        thumbnail.save(thumbnail_path, format="webp")
+            except Exception as img_e:
+                self._logger.warning(f"Failed to download or save Civitai image: {img_e}")
+
         self._signal_job_completed(job)
 
     def _register_external_model(self, job: ModelInstallJob) -> None:
@@ -1481,10 +1537,9 @@ class ModelInstallService(ModelInstallServiceBase):
     def get_fetcher_from_url(url: str) -> Type[ModelMetadataFetchBase]:
         """
         Return a metadata fetcher appropriate for provided url.
-
-        This used to be more useful, but the number of supported model
-        sources has been reduced to HuggingFace alone.
         """
         if re.match(r"^https?://huggingface.co/[^/]+/[^/]+$", url.lower()):
             return HuggingFaceMetadataFetch
+        if re.match(r"^https?://civitai\.[a-z]+/.*", url.lower()):
+            return CivitaiMetadataFetch
         raise ValueError(f"Unsupported model source: '{url}'")
