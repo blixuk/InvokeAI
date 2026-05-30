@@ -282,6 +282,22 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
   // @ts-expect-error - denoise is generic
   g.addEdge(denoise, 'latents', l2i, 'latents');
 
+  let pasteMask: unknown = faceOff;
+  let pasteMaskField = 'mask';
+
+  if (adetailer.maskBlur > 0) {
+    const blurMask = g.addNode({
+      type: 'img_blur',
+      id: getPrefixedId('adetailer_mask_blur'),
+      radius: adetailer.maskBlur,
+      blur_type: 'gaussian',
+    });
+    // @ts-expect-error - faceOff is generic
+    g.addEdge(faceOff, 'mask', blurMask, 'image');
+    pasteMask = blurMask;
+    pasteMaskField = 'image';
+  }
+
   // 8. Create Paste node to alpha blend detailed face back on base image
   const paste = g.addNode({
     type: 'img_paste',
@@ -292,8 +308,8 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
   g.addEdge(imageOutput, 'image', paste, 'base_image');
   // @ts-expect-error - l2i is generic
   g.addEdge(l2i, 'image', paste, 'image');
-  // @ts-expect-error - faceOff is generic
-  g.addEdge(faceOff, 'mask', paste, 'mask');
+  // @ts-expect-error - pasteMask is generic
+  g.addEdge(pasteMask, pasteMaskField, paste, 'mask');
   // @ts-expect-error - faceOff is generic
   g.addEdge(faceOff, 'x', paste, 'x');
   // @ts-expect-error - faceOff is generic
