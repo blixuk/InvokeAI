@@ -4,6 +4,7 @@ import { objectEquals } from '@observ33r/object-equals';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useAppSelector, useAppStore } from 'app/store/storeHooks';
 import { UploadImageIconButton } from 'common/hooks/useImageUploadButton';
+import { useRefImageIdContext } from 'features/controlLayers/contexts/RefImageIdContext';
 import { bboxSizeOptimized, bboxSizeRecalled } from 'features/controlLayers/store/canvasSlice';
 import { useCanvasIsStaging } from 'features/controlLayers/store/canvasStagingAreaSlice';
 import { sizeOptimized, sizeRecalled } from 'features/controlLayers/store/paramsSlice';
@@ -18,10 +19,11 @@ import { DndImageIcon } from 'features/dnd/DndImageIcon';
 import { selectActiveTab } from 'features/ui/store/uiSelectors';
 import { memo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PiArrowCounterClockwiseBold, PiCropBold, PiRulerBold } from 'react-icons/pi';
+import { PiArrowCounterClockwiseBold, PiCropBold, PiMagicWandBold, PiRulerBold } from 'react-icons/pi';
 import { useGetImageDTOQuery, useUploadImageMutation } from 'services/api/endpoints/images';
 import type { ImageDTO } from 'services/api/types';
 import { $isConnected } from 'services/events/stores';
+import { RefImageProcessorModal } from './RefImageProcessorModal';
 
 type Props<T extends typeof setGlobalReferenceImageDndTarget | typeof setRegionalGuidanceReferenceImageDndTarget> = {
   image: CroppableImageWithDims | null;
@@ -39,6 +41,7 @@ export const RefImageImage = memo(
   }: Props<T>) => {
     const { t } = useTranslation();
     const store = useAppStore();
+    const id = useRefImageIdContext();
     const isConnected = useStore($isConnected);
     const tab = useAppSelector(selectActiveTab);
     const isStaging = useCanvasIsStaging();
@@ -173,6 +176,14 @@ export const RefImageImage = memo(
                 tooltip={t('common.crop')}
                 isDisabled={!imageDTO}
               />
+              <RefImageProcessorModal id={id} currentImageName={imageDTO.image_name}>
+                <DndImageIcon
+                  onClick={() => {}}
+                  icon={<PiMagicWandBold size={16} />}
+                  tooltip="Process image with preprocessors (Canny, Depth, Pose, etc.)"
+                  isDisabled={!imageDTO}
+                />
+              </RefImageProcessorModal>
             </Flex>
           </>
         )}
@@ -183,3 +194,4 @@ export const RefImageImage = memo(
 );
 
 RefImageImage.displayName = 'RefImageImage';
+

@@ -50,6 +50,12 @@ Invoke runs a locally hosted web server & React UI with an industry-leading user
 
 The Unified Canvas is a fully integrated canvas implementation with support for all core generation capabilities, in/out-painting, brush tools, and more. This creative tool unlocks the capability for artists to create with AI as a creative collaborator, and can be used to augment AI-generated imagery, sketches, photography, renders, and more.
 
+### Reference Image Tools: Grid Stitching & Preprocessing
+
+Invoke now supports advanced reference image preparation workflows directly inside the Control Layers panel:
+- **Image Grid Stitching**: Combine 2 to 6 images (uploaded locally or selected from your gallery) into a single, high-fidelity reference image grid. Supports customizable canvas dimensions, slot gaps, scaling modes (crop/fill vs fit/pad), vertical/horizontal/grid layouts, and customizable background colors.
+- **ControlNet Preprocessor Runner**: Process any input image or active reference image with up to 14 different preprocessors (Canny, Depth, HED, LineArt, MLSD, Face, PiDiNet, Sketch, etc.) on the fly using the backend execution engine, and apply the generated map immediately as a reference image.
+
 ### Workflows & Nodes
 
 Invoke offers a fully featured workflow management solution, enabling users to combine the power of node-based workflows with the ease of a UI. This allows for customizable generation pipelines to be developed and shared by users looking to create specific workflows to support their production use-cases.

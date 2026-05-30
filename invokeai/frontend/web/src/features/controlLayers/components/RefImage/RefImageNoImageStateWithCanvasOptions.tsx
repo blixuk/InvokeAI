@@ -10,7 +10,10 @@ import { DndDropTarget } from 'features/dnd/DndDropTarget';
 import { setGlobalReferenceImage } from 'features/imageActions/actions';
 import { memo, useCallback, useMemo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { PiMagicWandBold, PiSquaresFourBold } from 'react-icons/pi';
 import type { ImageDTO } from 'services/api/types';
+import { RefImageGridModal } from './RefImageGridModal';
+import { RefImageProcessorModal } from './RefImageProcessorModal';
 
 export const RefImageNoImageStateWithCanvasOptions = memo(() => {
   const { t } = useTranslation();
@@ -55,8 +58,21 @@ export const RefImageNoImageStateWithCanvasOptions = memo(() => {
         label={t('controlLayers.useImage')}
         isDisabled={isBusy}
       />
+      <Flex gap={2} mt={1} width="full" justifyContent="center">
+        <RefImageGridModal id={id}>
+          <Button size="xs" variant="outline" leftIcon={<PiSquaresFourBold />} isDisabled={isBusy}>
+            Combine Grid
+          </Button>
+        </RefImageGridModal>
+        <RefImageProcessorModal id={id}>
+          <Button size="xs" variant="outline" leftIcon={<PiMagicWandBold />} isDisabled={isBusy}>
+            Preprocess
+          </Button>
+        </RefImageProcessorModal>
+      </Flex>
     </Flex>
   );
 });
 
 RefImageNoImageStateWithCanvasOptions.displayName = 'RefImageNoImageStateWithCanvasOptions';
+
