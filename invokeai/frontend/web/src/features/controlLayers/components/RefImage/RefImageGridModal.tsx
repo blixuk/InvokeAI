@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import {
   Button,
   Divider,
@@ -8,7 +9,6 @@ import {
   GridItem,
   Heading,
   IconButton,
-  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -28,10 +28,8 @@ import {
 } from '@invoke-ai/ui-library';
 import { useAppDispatch } from 'app/store/storeHooks';
 import ScrollableContent from 'common/components/OverlayScrollbars/ScrollableContent';
-import { imageDTOToCroppableImage } from 'features/controlLayers/store/util';
 import { setGlobalReferenceImage } from 'features/imageActions/actions';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   PiArrowRightBold,
   PiGridFourBold,
@@ -55,7 +53,6 @@ interface GridSlot {
 }
 
 export const RefImageGridModal = memo(({ id, children }: Props) => {
-  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [uploadImage] = useUploadImageMutation();
@@ -90,7 +87,9 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
 
   // Add slot
   const handleAddSlot = useCallback(() => {
-    if (slots.length >= 6) return;
+    if (slots.length >= 6) {
+return;
+}
     const newId = `slot-${Date.now()}`;
     setSlots((prev) => [...prev, { id: newId, imageDTO: null }]);
     setActiveSlotId(newId);
@@ -100,7 +99,9 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
   const handleRemoveSlot = useCallback((slotId: string) => {
     setSlots((prev) => {
       const nextSlots = prev.filter((s) => s.id !== slotId);
-      if (nextSlots.length < 2) return prev; // keep at least 2 slots
+      if (nextSlots.length < 2) {
+return prev;
+} // keep at least 2 slots
       return nextSlots;
     });
     setActiveSlotId((prevId) => (prevId === slotId ? 'slot-1' : prevId));
@@ -142,9 +143,13 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
   // Render & Draw Stitch Live Preview
   useEffect(() => {
     const canvas = previewCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+return;
+}
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+return;
+}
 
     const { width, height } = getDimensions();
     canvas.width = width;
@@ -186,14 +191,7 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
       const cellY = row * (cellHeight + spacing);
 
       if (!slot.imageDTO) {
-        // Draw placeholder text/rect for empty slot
-        ctx.fillStyle = '#1e1e24';
-        ctx.fillRect(cellX, cellY, cellWidth, cellHeight);
-        ctx.fillStyle = '#656570';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`Slot ${index + 1} (Empty)`, cellX + cellWidth / 2, cellY + cellHeight / 2);
+        // Empty slots remain filled with the background color (bgColor)
         return;
       }
 
@@ -209,7 +207,9 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
         if (loadedCount === slots.filter((s) => s.imageDTO !== null).length) {
           slots.forEach((s, idx) => {
             const drawData = imagesToDraw[idx];
-            if (!drawData || !drawData.img) return;
+            if (!drawData || !drawData.img) {
+return;
+}
 
             const { img: loadedImg, x, y } = drawData;
             ctx.save();
@@ -222,7 +222,7 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
             const cellRatio = cellWidth / cellHeight;
 
             if (fitMode === 'cover') {
-              let sx = 0, sy = 0, sw = loadedImg.width, sh = loadedImg.height;
+              let sx = 0; let sy = 0; let sw = loadedImg.width; let sh = loadedImg.height;
               if (imgRatio > cellRatio) {
                 sw = loadedImg.height * cellRatio;
                 sx = (loadedImg.width - sw) / 2;
@@ -233,8 +233,8 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
               ctx.drawImage(loadedImg, sx, sy, sw, sh, x, y, cellWidth, cellHeight);
             } else {
               // Fit/Contain
-              let dw = cellWidth, dh = cellHeight;
-              let dx = x, dy = y;
+              let dw = cellWidth; let dh = cellHeight;
+              let dx = x; let dy = y;
               if (imgRatio > cellRatio) {
                 dh = cellWidth / imgRatio;
                 dy = y + (cellHeight - dh) / 2;
@@ -257,10 +257,14 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
   // Handle final stitch action
   const handleStitchAndSave = useCallback(() => {
     const canvas = previewCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+return;
+}
 
     canvas.toBlob(async (blob) => {
-      if (!blob) return;
+      if (!blob) {
+return;
+}
       const file = new File([blob], `reference_grid_${Date.now()}.png`, { type: 'image/png' });
 
       try {
@@ -370,7 +374,9 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
                         <FormLabel fontSize="xs">Layout Arrangement</FormLabel>
                         <Select
                           value={layout}
-                          onChange={(e) => setLayout(e.target.value as any)}
+                          onChange={(e) => {
+                            setLayout(e.target.value as 'horizontal' | 'vertical' | 'grid');
+                          }}
                           size="sm"
                         >
                           <option value="grid">Grid (Auto Row/Col)</option>
@@ -383,7 +389,9 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
                         <FormLabel fontSize="xs">Scaling / Fit Mode</FormLabel>
                         <Select
                           value={fitMode}
-                          onChange={(e) => setFitMode(e.target.value as any)}
+                          onChange={(e) => {
+                            setFitMode(e.target.value as 'cover' | 'contain');
+                          }}
                           size="sm"
                         >
                           <option value="cover">Crop & Fill (Cover)</option>
@@ -501,7 +509,9 @@ export const RefImageGridModal = memo(({ id, children }: Props) => {
                                 id={`file-upload-${slot.id}`}
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
-                                  if (file) handleLocalUpload(slot.id, file);
+                                  if (file) {
+handleLocalUpload(slot.id, file);
+}
                                 }}
                               />
                               <IconButton
