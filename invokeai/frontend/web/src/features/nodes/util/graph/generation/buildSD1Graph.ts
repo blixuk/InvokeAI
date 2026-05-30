@@ -14,6 +14,7 @@ import { addOutpaint } from 'features/nodes/util/graph/generation/addOutpaint';
 import { addSeamless } from 'features/nodes/util/graph/generation/addSeamless';
 import { addTextToImage } from 'features/nodes/util/graph/generation/addTextToImage';
 import { addWatermarker } from 'features/nodes/util/graph/generation/addWatermarker';
+import { addADetailer } from 'features/nodes/util/graph/generation/addADetailer';
 import { Graph } from 'features/nodes/util/graph/generation/Graph';
 import { selectCanvasOutputFields, selectPresetModifiedPrompts } from 'features/nodes/util/graph/graphBuilderUtils';
 import type { GraphBuilderArg, GraphBuilderReturn, ImageOutputNodes } from 'features/nodes/util/graph/types';
@@ -303,6 +304,19 @@ export const buildSD1Graph = async (arg: GraphBuilderArg): Promise<GraphBuilderR
     g.addEdge(ipAdapterCollect, 'collection', denoise, 'ip_adapter');
   } else {
     g.deleteNode(ipAdapterCollect.id);
+  }
+
+  if (state.adetailer.isEnabled) {
+    canvasOutput = addADetailer({
+      g,
+      state,
+      imageOutput: canvasOutput,
+      modelLoader,
+      vaeSource,
+      seed,
+      posCond: posCondCollect,
+      negCond: negCondCollect,
+    });
   }
 
   if (state.system.shouldUseNSFWChecker) {

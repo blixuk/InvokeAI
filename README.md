@@ -64,6 +64,13 @@ Invoke offers a fully featured workflow management solution, enabling users to c
 
 Invoke now features a built-in AI Assistant powered by Ollama. Communicate directly with a powerful local LLM from within the workspace. Features include full vision capabilities (chat with your generated images), rich markdown rendering with syntax-highlighted code blocks, and context-aware generation prompting.
 
+### Detailer (After Detailer) GUI
+
+Invoke now features a native, fully integrated **Detailer** accordion directly inside the sidebar controls for both the Generation and Unified Canvas workspaces:
+- **Dynamic Parameter Presets**: Optimal values for denoising strength, padding, mask blur, and detection thresholds are dynamically loaded and visual sliders updated in real time depending on whether you select Face (MediaPipe), Face (YOLOv8), Hand (YOLOv8), or Person (YOLOv8).
+- **Save Before/After Comparison**: With a simple toggle, automatically output the original generation and the detailed version to the gallery side-by-side for instant comparison.
+- **Dedicated Prompt Overrides**: Enter detailed prompt overrides (e.g., specific hair styles, eye color, skin textures) for the crop regions, or let it fall back seamlessly to the main prompt when empty.
+
 ### Templates & Style Presets
 
 A dedicated Templates tab provides a full-page grid to create, edit, organize, and delete prompt templates and style presets. Includes a "Style Reference" toggle to automatically inject template cover images into the generation context via IP-Adapter or Kontext conditioning.

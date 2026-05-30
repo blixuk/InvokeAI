@@ -7,6 +7,7 @@ import { addControlNets, addT2IAdapters } from 'features/nodes/util/graph/genera
 import { addImageToImage } from 'features/nodes/util/graph/generation/addImageToImage';
 import { addInpaint } from 'features/nodes/util/graph/generation/addInpaint';
 import { addIPAdapters } from 'features/nodes/util/graph/generation/addIPAdapters';
+import { addLoRAs } from 'features/nodes/util/graph/generation/addLoRAs';
 import { addNSFWChecker } from 'features/nodes/util/graph/generation/addNSFWChecker';
 import { addOutpaint } from 'features/nodes/util/graph/generation/addOutpaint';
 import { addSDXLLoRAs } from 'features/nodes/util/graph/generation/addSDXLLoRAs';
@@ -14,6 +15,7 @@ import { addSDXLRefiner } from 'features/nodes/util/graph/generation/addSDXLRefi
 import { addSeamless } from 'features/nodes/util/graph/generation/addSeamless';
 import { addTextToImage } from 'features/nodes/util/graph/generation/addTextToImage';
 import { addWatermarker } from 'features/nodes/util/graph/generation/addWatermarker';
+import { addADetailer } from 'features/nodes/util/graph/generation/addADetailer';
 import { Graph } from 'features/nodes/util/graph/generation/Graph';
 import { selectCanvasOutputFields, selectPresetModifiedPrompts } from 'features/nodes/util/graph/graphBuilderUtils';
 import type { GraphBuilderArg, GraphBuilderReturn, ImageOutputNodes } from 'features/nodes/util/graph/types';
@@ -310,6 +312,19 @@ export const buildSDXLGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
     g.addEdge(ipAdapterCollect, 'collection', denoise, 'ip_adapter');
   } else {
     g.deleteNode(ipAdapterCollect.id);
+  }
+
+  if (state.adetailer.isEnabled) {
+    canvasOutput = addADetailer({
+      g,
+      state,
+      imageOutput: canvasOutput,
+      modelLoader,
+      vaeSource,
+      seed,
+      posCond: posCondCollect,
+      negCond: negCondCollect,
+    });
   }
 
   if (state.system.shouldUseNSFWChecker) {

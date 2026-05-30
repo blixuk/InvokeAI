@@ -36,6 +36,7 @@ import { nodesSliceConfig } from 'features/nodes/store/nodesSlice';
 import { workflowLibrarySliceConfig } from 'features/nodes/store/workflowLibrarySlice';
 import { workflowSettingsSliceConfig } from 'features/nodes/store/workflowSettingsSlice';
 import { upscaleSliceConfig } from 'features/parameters/store/upscaleSlice';
+import { adetailerSliceConfig } from 'features/parameters/store/adetailerSlice';
 import { queueSliceConfig } from 'features/queue/store/queueSlice';
 import { stylePresetSliceConfig } from 'features/stylePresets/store/stylePresetSlice';
 import { hotkeysSliceConfig } from 'features/system/store/hotkeysSlice';
@@ -83,6 +84,7 @@ const SLICE_CONFIGS = {
   [systemSliceConfig.slice.reducerPath]: systemSliceConfig,
   [uiSliceConfig.slice.reducerPath]: uiSliceConfig,
   [upscaleSliceConfig.slice.reducerPath]: upscaleSliceConfig,
+  [adetailerSliceConfig.slice.reducerPath]: adetailerSliceConfig,
   [workflowLibrarySliceConfig.slice.reducerPath]: workflowLibrarySliceConfig,
   [workflowSettingsSliceConfig.slice.reducerPath]: workflowSettingsSliceConfig,
 };
@@ -119,6 +121,7 @@ const ALL_REDUCERS = {
   [systemSliceConfig.slice.reducerPath]: systemSliceConfig.slice.reducer,
   [uiSliceConfig.slice.reducerPath]: uiSliceConfig.slice.reducer,
   [upscaleSliceConfig.slice.reducerPath]: upscaleSliceConfig.slice.reducer,
+  [adetailerSliceConfig.slice.reducerPath]: adetailerSliceConfig.slice.reducer,
   [workflowLibrarySliceConfig.slice.reducerPath]: workflowLibrarySliceConfig.slice.reducer,
   [workflowSettingsSliceConfig.slice.reducerPath]: workflowSettingsSliceConfig.slice.reducer,
 };

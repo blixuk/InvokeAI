@@ -12,6 +12,7 @@ import { isFlux2ReferenceImageConfig, isFluxKontextReferenceImageConfig } from '
 import { getGlobalReferenceImageWarnings } from 'features/controlLayers/store/validators';
 import type { ModelIdentifierField } from 'features/nodes/types/common';
 import { zImageField, zModelIdentifierField } from 'features/nodes/types/common';
+import { addADetailer } from 'features/nodes/util/graph/generation/addADetailer';
 import { addFlux2KleinLoRAs } from 'features/nodes/util/graph/generation/addFlux2KleinLoRAs';
 import { addFLUXFill } from 'features/nodes/util/graph/generation/addFLUXFill';
 import { addFLUXLoRAs } from 'features/nodes/util/graph/generation/addFLUXLoRAs';
@@ -581,6 +582,19 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
   }
 
   // TODO: Add FLUX Reduxes to denoise node like we do for ipa
+
+  if (state.adetailer.isEnabled) {
+    canvasOutput = addADetailer({
+      g,
+      state,
+      imageOutput: canvasOutput,
+      modelLoader,
+      vaeSource: modelLoader,
+      seed,
+      posCond,
+      negCond: null,
+    });
+  }
 
   if (state.system.shouldUseNSFWChecker) {
     canvasOutput = addNSFWChecker(g, canvasOutput);

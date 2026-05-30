@@ -4,6 +4,7 @@ import { useAppSelector } from 'app/store/storeHooks';
 import { overlayScrollbarsParams } from 'common/components/OverlayScrollbars/constants';
 import { selectIsCogView4, selectIsExternal, selectIsSDXL } from 'features/controlLayers/store/paramsSlice';
 import { Prompts } from 'features/parameters/components/Prompts/Prompts';
+import { ADetailerSettingsAccordion } from 'features/settingsAccordions/components/ADetailerSettingsAccordion/ADetailerSettingsAccordion';
 import { AdvancedSettingsAccordion } from 'features/settingsAccordions/components/AdvancedSettingsAccordion/AdvancedSettingsAccordion';
 import { CompositingSettingsAccordion } from 'features/settingsAccordions/components/CompositingSettingsAccordion/CompositingSettingsAccordion';
 import { ExternalSettingsAccordion } from 'features/settingsAccordions/components/ExternalSettingsAccordion/ExternalSettingsAccordion';
@@ -45,6 +46,7 @@ export const ParametersPanelCanvas = memo(() => {
               <Prompts />
               <CanvasTabImageSettingsAccordion />
               <GenerationSettingsAccordion />
+              <ADetailerSettingsAccordion />
               {!isExternal && <CompositingSettingsAccordion />}
               {isSDXL && <RefinerSettingsAccordion />}
               {!isCogview4 && !isExternal && <AdvancedSettingsAccordion />}
