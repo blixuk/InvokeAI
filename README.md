@@ -70,6 +70,7 @@ Invoke now features a native, fully integrated **Detailer** accordion directly i
 - **Dynamic Parameter Presets**: Optimal values for denoising strength, padding, mask blur, and detection thresholds are dynamically loaded and visual sliders updated in real time depending on whether you select Face (MediaPipe), Face (YOLOv8), Hand (YOLOv8), or Person (YOLOv8).
 - **Save Before/After Comparison**: With a simple toggle, automatically output the original generation and the detailed version to the gallery side-by-side for instant comparison.
 - **Dedicated Prompt Overrides**: Enter detailed prompt overrides (e.g., specific hair styles, eye color, skin textures) for the crop regions, or let it fall back seamlessly to the main prompt when empty.
+- **Custom Detector Checkpoints**: Install and classify any third-party YOLO/face/hand/person detection checkpoint under the new `Detailer Detector` model type (supports both ONNX and Checkpoint formats), and dynamically select them in the GUI dropdown.
 
 ### Templates & Style Presets
 

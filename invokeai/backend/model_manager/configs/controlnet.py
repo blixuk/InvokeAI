@@ -142,6 +142,10 @@ class ControlNet_Diffusers_FLUX_Config(ControlNet_Diffusers_Config_Base, Config_
     base: Literal[BaseModelType.Flux] = Field(default=BaseModelType.Flux)
 
 
+class ControlNet_Diffusers_Flux2_Config(ControlNet_Diffusers_Config_Base, Config_Base):
+    base: Literal[BaseModelType.Flux2] = Field(default=BaseModelType.Flux2)
+
+
 class ControlNet_Checkpoint_Config_Base(Checkpoint_Config_Base):
     """Model config for ControlNet models (diffusers version)."""
 
@@ -234,6 +238,10 @@ class ControlNet_Checkpoint_SDXL_Config(ControlNet_Checkpoint_Config_Base, Confi
 
 class ControlNet_Checkpoint_FLUX_Config(ControlNet_Checkpoint_Config_Base, Config_Base):
     base: Literal[BaseModelType.Flux] = Field(default=BaseModelType.Flux)
+
+
+class ControlNet_Checkpoint_Flux2_Config(ControlNet_Checkpoint_Config_Base, Config_Base):
+    base: Literal[BaseModelType.Flux2] = Field(default=BaseModelType.Flux2)
 
 
 def _has_z_image_control_keys(state_dict: dict) -> bool:

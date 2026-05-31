@@ -9,7 +9,7 @@ import z from 'zod';
 const zADetailerState = z.object({
   _version: z.literal(2),
   isEnabled: z.boolean(),
-  detectorModel: z.enum(['mediapipe_face', 'yolov8_face', 'yolov8_hand', 'yolov8_person']),
+  detectorModel: z.string(),
   denoisingStrength: z.number(),
   prompt: z.string(),
   padding: z.number(),
@@ -21,7 +21,7 @@ const zADetailerState = z.object({
 export type ADetailerState = z.infer<typeof zADetailerState>;
 
 const modelDefaults: Record<
-  ADetailerState['detectorModel'],
+  string,
   { denoisingStrength: number; padding: number; maskBlur: number; minConfidence: number }
 > = {
   mediapipe_face: {
@@ -69,9 +69,14 @@ const slice = createSlice({
     setADetailerEnabled: (state, action: PayloadAction<boolean>) => {
       state.isEnabled = action.payload;
     },
-    setADetailerModel: (state, action: PayloadAction<ADetailerState['detectorModel']>) => {
+    setADetailerModel: (state, action: PayloadAction<string>) => {
       state.detectorModel = action.payload;
-      const defaults = modelDefaults[action.payload];
+      const defaults = modelDefaults[action.payload] ?? {
+        denoisingStrength: 0.35,
+        padding: 32,
+        maskBlur: 4,
+        minConfidence: 0.5,
+      };
       state.denoisingStrength = defaults.denoisingStrength;
       state.padding = defaults.padding;
       state.maskBlur = defaults.maskBlur;

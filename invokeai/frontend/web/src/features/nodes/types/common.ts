@@ -138,6 +138,7 @@ export const zModelType = z.enum([
   'siglip',
   'flux_redux',
   'external_image_generator',
+  'detector',
   'unknown',
 ]);
 export type ModelType = z.infer<typeof zModelType>;

@@ -1213,6 +1213,7 @@
         "localOnly": "local only",
         "manual": "Manual",
         "loraModels": "LoRAs",
+        "detectorModels": "Detailer Detectors",
         "main": "Main",
         "metadata": "Metadata",
         "missingFiles": "Missing Files",

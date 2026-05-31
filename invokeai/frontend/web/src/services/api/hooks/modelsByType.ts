@@ -16,6 +16,7 @@ import {
   isCLIPEmbedModelConfigOrSubmodel,
   isControlLayerModelConfig,
   isControlNetModelConfig,
+  isDetectorModelConfig,
   isExternalApiModelConfig,
   isFlux1VAEModelConfig,
   isFlux2DiffusersMainModelConfig,
@@ -156,3 +157,4 @@ export const selectAnimaVAEModels = buildModelsSelector(isAnimaVAEModelConfig);
 export const selectT5EncoderModels = buildModelsSelector(isT5EncoderModelConfigOrSubmodel);
 export const useTextLLMModels = () => buildModelsHook(isTextLLMModelConfig)();
 export const useLlavaModels = () => buildModelsHook(isLLaVAModelConfig)();
+export const useDetectorModels = () => buildModelsHook(isDetectorModelConfig)();

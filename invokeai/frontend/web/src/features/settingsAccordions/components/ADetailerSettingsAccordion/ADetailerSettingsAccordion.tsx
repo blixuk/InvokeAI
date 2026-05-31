@@ -25,10 +25,12 @@ import {
 import { useStandaloneAccordionToggle } from 'features/settingsAccordions/hooks/useStandaloneAccordionToggle';
 import type { ChangeEvent } from 'react';
 import { memo, useCallback } from 'react';
+import { useDetectorModels } from 'services/api/hooks/modelsByType';
 
 export const ADetailerSettingsAccordion = memo(() => {
   const dispatch = useAppDispatch();
   const adetailer = useAppSelector(selectADetailerSlice);
+  const [detectorModels] = useDetectorModels();
 
   const { isOpen, onToggle } = useStandaloneAccordionToggle({
     id: 'adetailer-settings',
@@ -120,10 +122,21 @@ export const ADetailerSettingsAccordion = memo(() => {
             <FormControl>
               <FormLabel>Detection Model</FormLabel>
               <Select value={adetailer.detectorModel} onChange={handleModelChange}>
-                <option value="mediapipe_face">Face (MediaPipe Mesh)</option>
-                <option value="yolov8_face">Face (YOLOv8)</option>
-                <option value="yolov8_hand">Hand (YOLOv8)</option>
-                <option value="yolov8_person">Person (YOLOv8)</option>
+                <optgroup label="Built-in Models">
+                  <option value="mediapipe_face">Face (MediaPipe Mesh)</option>
+                  <option value="yolov8_face">Face (YOLOv8)</option>
+                  <option value="yolov8_hand">Hand (YOLOv8)</option>
+                  <option value="yolov8_person">Person (YOLOv8)</option>
+                </optgroup>
+                {detectorModels.length > 0 && (
+                  <optgroup label="Custom Models">
+                    {detectorModels.map((model) => (
+                      <option key={model.key} value={model.key}>
+                        {model.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </Select>
             </FormControl>
 

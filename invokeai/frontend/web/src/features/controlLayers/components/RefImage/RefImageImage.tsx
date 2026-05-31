@@ -23,6 +23,7 @@ import { PiArrowCounterClockwiseBold, PiCropBold, PiMagicWandBold, PiRulerBold }
 import { useGetImageDTOQuery, useUploadImageMutation } from 'services/api/endpoints/images';
 import type { ImageDTO } from 'services/api/types';
 import { $isConnected } from 'services/events/stores';
+
 import { RefImageProcessorModal } from './RefImageProcessorModal';
 
 type Props<T extends typeof setGlobalReferenceImageDndTarget | typeof setRegionalGuidanceReferenceImageDndTarget> = {

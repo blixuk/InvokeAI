@@ -2,8 +2,6 @@ import {
   Button,
   Divider,
   Flex,
-  FormControl,
-  FormLabel,
   Grid,
   GridItem,
   Heading,
@@ -24,12 +22,11 @@ import { useAppDispatch } from 'app/store/storeHooks';
 import ScrollableContent from 'common/components/OverlayScrollbars/ScrollableContent';
 import { FilterSettings } from 'features/controlLayers/components/Filters/FilterSettings';
 import { FilterTypeSelect } from 'features/controlLayers/components/Filters/FilterTypeSelect';
-import { IMAGE_FILTERS } from 'features/controlLayers/store/filters';
 import type { FilterConfig } from 'features/controlLayers/store/filters';
-import { imageDTOToCroppableImage } from 'features/controlLayers/store/util';
+import { IMAGE_FILTERS } from 'features/controlLayers/store/filters';
 import { setGlobalReferenceImage } from 'features/imageActions/actions';
 import { zImageOutput } from 'features/nodes/types/common';
-import { memo, useCallback, useEffect, useState } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   PiArrowRightBold,
@@ -39,7 +36,7 @@ import {
   PiXBold,
 } from 'react-icons/pi';
 import { getImageDTO, useGetImageDTOQuery, useListImagesQuery, useUploadImageMutation } from 'services/api/endpoints/images';
-import { runGraph, buildRunGraphDependencies } from 'services/api/run-graph';
+import { buildRunGraphDependencies, runGraph } from 'services/api/run-graph';
 import type { ImageDTO } from 'services/api/types';
 import { $socket } from 'services/events/stores';
 
@@ -118,7 +115,9 @@ export const RefImageProcessorModal = memo(({ id, currentImageName, children }: 
 
   // Run the preprocessor graph on the backend
   const handleRunPreprocessor = useCallback(async () => {
-    if (!inputImage || !socket) return;
+    if (!inputImage || !socket) {
+      return;
+    }
 
     setIsProcessing(true);
     setError(null);
@@ -162,7 +161,9 @@ export const RefImageProcessorModal = memo(({ id, currentImageName, children }: 
 
   // Apply output as reference image
   const handleApplyReference = useCallback(() => {
-    if (!outputImage) return;
+    if (!outputImage) {
+      return;
+    }
     setGlobalReferenceImage({ imageDTO: outputImage, id, dispatch });
     onClose();
   }, [dispatch, id, outputImage, onClose]);
@@ -282,7 +283,9 @@ export const RefImageProcessorModal = memo(({ id, currentImageName, children }: 
                           id="preprocessor-file-upload"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleLocalUpload(file);
+                            if (file) {
+                              handleLocalUpload(file);
+                            }
                           }}
                         />
                         <Button

@@ -17,11 +17,13 @@ from invokeai.backend.model_manager.configs.clip_vision import CLIPVision_Diffus
 from invokeai.backend.model_manager.configs.controlnet import (
     ControlAdapterDefaultSettings,
     ControlNet_Checkpoint_FLUX_Config,
+    ControlNet_Checkpoint_Flux2_Config,
     ControlNet_Checkpoint_SD1_Config,
     ControlNet_Checkpoint_SD2_Config,
     ControlNet_Checkpoint_SDXL_Config,
     ControlNet_Checkpoint_ZImage_Config,
     ControlNet_Diffusers_FLUX_Config,
+    ControlNet_Diffusers_Flux2_Config,
     ControlNet_Diffusers_SD1_Config,
     ControlNet_Diffusers_SD2_Config,
     ControlNet_Diffusers_SDXL_Config,
@@ -96,6 +98,8 @@ from invokeai.backend.model_manager.configs.qwen_vl_encoder import (
 )
 from invokeai.backend.model_manager.configs.siglip import SigLIP_Diffusers_Config
 from invokeai.backend.model_manager.configs.spandrel import Spandrel_Checkpoint_Config
+from invokeai.backend.model_manager.configs.detector import Detector_Checkpoint_Config, Detector_ONNX_Config
+
 from invokeai.backend.model_manager.configs.t2i_adapter import (
     T2IAdapter_Diffusers_SD1_Config,
     T2IAdapter_Diffusers_SDXL_Config,
@@ -209,12 +213,14 @@ AnyModelConfig = Annotated[
         Annotated[ControlNet_Checkpoint_SD1_Config, ControlNet_Checkpoint_SD1_Config.get_tag()],
         Annotated[ControlNet_Checkpoint_SD2_Config, ControlNet_Checkpoint_SD2_Config.get_tag()],
         Annotated[ControlNet_Checkpoint_SDXL_Config, ControlNet_Checkpoint_SDXL_Config.get_tag()],
+        Annotated[ControlNet_Checkpoint_Flux2_Config, ControlNet_Checkpoint_Flux2_Config.get_tag()],
         Annotated[ControlNet_Checkpoint_FLUX_Config, ControlNet_Checkpoint_FLUX_Config.get_tag()],
         Annotated[ControlNet_Checkpoint_ZImage_Config, ControlNet_Checkpoint_ZImage_Config.get_tag()],
         # ControlNet - diffusers format
         Annotated[ControlNet_Diffusers_SD1_Config, ControlNet_Diffusers_SD1_Config.get_tag()],
         Annotated[ControlNet_Diffusers_SD2_Config, ControlNet_Diffusers_SD2_Config.get_tag()],
         Annotated[ControlNet_Diffusers_SDXL_Config, ControlNet_Diffusers_SDXL_Config.get_tag()],
+        Annotated[ControlNet_Diffusers_Flux2_Config, ControlNet_Diffusers_Flux2_Config.get_tag()],
         Annotated[ControlNet_Diffusers_FLUX_Config, ControlNet_Diffusers_FLUX_Config.get_tag()],
         # LoRA - LyCORIS format
         # IMPORTANT: FLUX.2 must be checked BEFORE FLUX.1 because FLUX.2 has specific validation
@@ -281,8 +287,11 @@ AnyModelConfig = Annotated[
         Annotated[LlavaOnevision_Diffusers_Config, LlavaOnevision_Diffusers_Config.get_tag()],
         Annotated[TextLLM_Diffusers_Config, TextLLM_Diffusers_Config.get_tag()],
         Annotated[ExternalApiModelConfig, ExternalApiModelConfig.get_tag()],
+        Annotated[Detector_Checkpoint_Config, Detector_Checkpoint_Config.get_tag()],
+        Annotated[Detector_ONNX_Config, Detector_ONNX_Config.get_tag()],
         # Unknown model (fallback)
         Annotated[Unknown_Config, Unknown_Config.get_tag()],
+
     ],
     Discriminator(Config_Base.get_model_discriminator_value),
 ]

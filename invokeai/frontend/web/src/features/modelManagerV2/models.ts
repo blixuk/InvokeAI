@@ -6,6 +6,7 @@ import {
   isCLIPVisionModelConfig,
   isControlLoRAModelConfig,
   isControlNetModelConfig,
+  isDetectorModelConfig,
   isExternalApiModelConfig,
   isFluxReduxModelConfig,
   isIPAdapterModelConfig,
@@ -140,6 +141,11 @@ const MODEL_CATEGORIES: Record<ModelCategoryType, ModelCategoryData> = {
     i18nKey: 'modelManager.externalImageGenerator',
     filter: isExternalApiModelConfig,
   },
+  detector: {
+    category: 'detector',
+    i18nKey: 'modelManager.detectorModels',
+    filter: isDetectorModelConfig,
+  },
 };
 
 export const MODEL_CATEGORIES_AS_LIST = objectEntries(MODEL_CATEGORIES).map(([category, { i18nKey, filter }]) => ({
@@ -192,6 +198,7 @@ export const MODEL_TYPE_TO_LONG_NAME: Record<ModelType, string> = {
   flux_redux: 'FLUX Redux',
   text_llm: 'Text LLM',
   external_image_generator: 'External Image Generator',
+  detector: 'Detailer Detector',
   unknown: 'Unknown',
 };
 

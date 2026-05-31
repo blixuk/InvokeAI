@@ -35,8 +35,8 @@ import { modelManagerSliceConfig } from 'features/modelManagerV2/store/modelMana
 import { nodesSliceConfig } from 'features/nodes/store/nodesSlice';
 import { workflowLibrarySliceConfig } from 'features/nodes/store/workflowLibrarySlice';
 import { workflowSettingsSliceConfig } from 'features/nodes/store/workflowSettingsSlice';
-import { upscaleSliceConfig } from 'features/parameters/store/upscaleSlice';
 import { adetailerSliceConfig } from 'features/parameters/store/adetailerSlice';
+import { upscaleSliceConfig } from 'features/parameters/store/upscaleSlice';
 import { queueSliceConfig } from 'features/queue/store/queueSlice';
 import { stylePresetSliceConfig } from 'features/stylePresets/store/stylePresetSlice';
 import { hotkeysSliceConfig } from 'features/system/store/hotkeysSlice';

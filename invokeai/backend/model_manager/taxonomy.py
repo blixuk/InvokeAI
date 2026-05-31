@@ -85,7 +85,9 @@ class ModelType(str, Enum):
     LlavaOnevision = "llava_onevision"
     TextLLM = "text_llm"
     ExternalImageGenerator = "external_image_generator"
+    Detector = "detector"
     Unknown = "unknown"
+
 
 
 class SubModelType(str, Enum):

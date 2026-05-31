@@ -35,12 +35,24 @@ export const ControlLayerControlAdapterModel = memo(({ modelKey, onChange: onCha
 
   const getIsDisabled = useCallback(
     (model: AnyModelConfig): boolean => {
-      const isCompatible = currentBaseModel === model.base;
+      const isCompatible =
+        currentBaseModel === model.base ||
+        (currentBaseModel === 'flux' && model.base === 'flux2');
       const hasMainModel = Boolean(currentBaseModel);
       return !hasMainModel || !isCompatible;
     },
     [currentBaseModel]
   );
+
+  const isSelectedCompatible = useMemo(() => {
+    if (!selectedModel) {
+      return true;
+    }
+    return (
+      currentBaseModel === selectedModel.base ||
+      (currentBaseModel === 'flux' && selectedModel.base === 'flux2')
+    );
+  }, [currentBaseModel, selectedModel]);
 
   const { options, value, onChange, noOptionsMessage } = useGroupedModelCombobox({
     modelConfigs,
@@ -53,7 +65,7 @@ export const ControlLayerControlAdapterModel = memo(({ modelKey, onChange: onCha
 
   return (
     <Tooltip label={selectedModel?.description}>
-      <FormControl isInvalid={!value || currentBaseModel !== selectedModel?.base} w="full">
+      <FormControl isInvalid={!value || !isSelectedCompatible} w="full">
         <Combobox
           options={options}
           placeholder={t('common.placeholderSelectAModel')}

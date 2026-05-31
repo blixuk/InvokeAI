@@ -1,22 +1,21 @@
 import type { RootState } from 'app/store/store';
 import { getPrefixedId } from 'features/controlLayers/konva/util';
 import type { Graph } from 'features/nodes/util/graph/generation/Graph';
-import type { ImageOutputNodes, MainModelLoaderNodes, VaeSourceNodes } from 'features/nodes/util/graph/types';
 import { selectModelConfigsQuery } from 'services/api/endpoints/models';
-import type { Invocation } from 'services/api/types';
+import type { AnyInvocation } from 'services/api/types';
 
 type AddADetailerArg = {
   g: Graph;
   state: RootState;
-  imageOutput: Invocation<ImageOutputNodes>;
-  modelLoader: Invocation<MainModelLoaderNodes>;
-  vaeSource: Invocation<VaeSourceNodes | MainModelLoaderNodes>;
-  seed: Invocation<'integer'>;
-  posCond: Invocation<unknown>;
-  negCond: Invocation<unknown> | null;
+  imageOutput: AnyInvocation;
+  modelLoader: AnyInvocation;
+  vaeSource: AnyInvocation;
+  seed: AnyInvocation;
+  posCond: AnyInvocation;
+  negCond: AnyInvocation | null;
 };
 
-export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes> => {
+export const addADetailer = (arg: AddADetailerArg): any => {
   const { g, state, imageOutput, modelLoader, vaeSource, seed, posCond, negCond } = arg;
   const adetailer = state.adetailer;
 
@@ -24,18 +23,21 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
     return imageOutput;
   }
 
+  const addEdge = (fromNode: AnyInvocation, fromField: string, toNode: AnyInvocation, toField: string) => {
+    (g as any).addEdge(fromNode, fromField, toNode, toField);
+  };
+
   // If user wants a side-by-side comparison, save the base generated image to the gallery as the 'before' image.
   if (adetailer.saveBeforeImage) {
-    // @ts-expect-error - imageOutput is type-safe but node updates are generic
-    g.updateNode(imageOutput, { is_intermediate: false });
+    imageOutput.is_intermediate = false;
   }
 
   const isFlux = modelLoader.type === 'flux_model_loader' || modelLoader.type === 'flux2_klein_model_loader';
 
-  let detailerModelLoader: Invocation<MainModelLoaderNodes> = modelLoader;
-  let detailerVaeSource: Invocation<VaeSourceNodes | MainModelLoaderNodes> = vaeSource;
-  let detailerPosCond: Invocation<unknown> = posCond;
-  let detailerNegCond: Invocation<unknown> | null = negCond;
+  let detailerModelLoader: AnyInvocation = modelLoader;
+  let detailerVaeSource: AnyInvocation = vaeSource;
+  let detailerPosCond: AnyInvocation = posCond;
+  let detailerNegCond: AnyInvocation | null = negCond;
   let detailerModelConfig: unknown = null;
 
   if (isFlux) {
@@ -70,26 +72,26 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
         },
       });
 
-      detailerModelLoader = loader as unknown as Invocation<MainModelLoaderNodes>;
-      detailerVaeSource = loader as unknown as Invocation<MainModelLoaderNodes>;
+      detailerModelLoader = loader;
+      detailerVaeSource = loader;
 
       const isSDXL = config.base === 'sdxl';
       if (isSDXL) {
         const customPosCond = g.addNode({
           type: 'sdxl_compel_prompt',
           id: getPrefixedId('adetailer_pos_cond'),
-          prompt: adetailer.prompt || state.params.prompt,
-          style: adetailer.prompt || state.params.prompt,
+          prompt: adetailer.prompt || state.params.positivePrompt,
+          style: adetailer.prompt || state.params.positivePrompt,
         });
-        g.addEdge(loader, 'clip', customPosCond, 'clip');
-        g.addEdge(loader, 'clip2', customPosCond, 'clip2');
+        addEdge(loader, 'clip', customPosCond, 'clip');
+        addEdge(loader, 'clip2', customPosCond, 'clip2');
 
         const customPosCondCollect = g.addNode({
           type: 'collect',
           id: getPrefixedId('adetailer_pos_cond_collect'),
         });
-        g.addEdge(customPosCond, 'conditioning', customPosCondCollect, 'item');
-        detailerPosCond = customPosCondCollect as unknown as Invocation<unknown>;
+        addEdge(customPosCond, 'conditioning', customPosCondCollect, 'item');
+        detailerPosCond = customPosCondCollect;
 
         const customNegCond = g.addNode({
           type: 'sdxl_compel_prompt',
@@ -97,44 +99,44 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
           prompt: state.params.negativePrompt || '',
           style: state.params.negativePrompt || '',
         });
-        g.addEdge(loader, 'clip', customNegCond, 'clip');
-        g.addEdge(loader, 'clip2', customNegCond, 'clip2');
+        addEdge(loader, 'clip', customNegCond, 'clip');
+        addEdge(loader, 'clip2', customNegCond, 'clip2');
 
         const customNegCondCollect = g.addNode({
           type: 'collect',
           id: getPrefixedId('adetailer_neg_cond_collect'),
         });
-        g.addEdge(customNegCond, 'conditioning', customNegCondCollect, 'item');
-        detailerNegCond = customNegCondCollect as unknown as Invocation<unknown>;
+        addEdge(customNegCond, 'conditioning', customNegCondCollect, 'item');
+        detailerNegCond = customNegCondCollect;
       } else {
         // SD1.5
         const customPosCond = g.addNode({
           type: 'compel',
           id: getPrefixedId('adetailer_pos_cond'),
-          prompt: adetailer.prompt || state.params.prompt,
+          prompt: adetailer.prompt || state.params.positivePrompt,
         });
-        g.addEdge(loader, 'clip', customPosCond, 'clip');
+        addEdge(loader, 'clip', customPosCond, 'clip');
 
         const customPosCondCollect = g.addNode({
           type: 'collect',
           id: getPrefixedId('adetailer_pos_cond_collect'),
         });
-        g.addEdge(customPosCond, 'conditioning', customPosCondCollect, 'item');
-        detailerPosCond = customPosCondCollect as unknown as Invocation<unknown>;
+        addEdge(customPosCond, 'conditioning', customPosCondCollect, 'item');
+        detailerPosCond = customPosCondCollect;
 
         const customNegCond = g.addNode({
           type: 'compel',
           id: getPrefixedId('adetailer_neg_cond'),
           prompt: state.params.negativePrompt || '',
         });
-        g.addEdge(loader, 'clip', customNegCond, 'clip');
+        addEdge(loader, 'clip', customNegCond, 'clip');
 
         const customNegCondCollect = g.addNode({
           type: 'collect',
           id: getPrefixedId('adetailer_neg_cond_collect'),
         });
-        g.addEdge(customNegCond, 'conditioning', customNegCondCollect, 'item');
-        detailerNegCond = customNegCondCollect as unknown as Invocation<unknown>;
+        addEdge(customNegCond, 'conditioning', customNegCondCollect, 'item');
+        detailerNegCond = customNegCondCollect;
       }
     }
   }
@@ -147,8 +149,7 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
     padding: adetailer.padding,
     chunk: false,
   });
-  // @ts-expect-error - imageOutput outputs image but node connections are loose
-  g.addEdge(imageOutput, 'image', faceOff, 'image');
+  addEdge(imageOutput, 'image', faceOff, 'image');
 
   // 2. Create Denoise Mask node
   const createDenoiseMask = g.addNode({
@@ -156,12 +157,9 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
     id: getPrefixedId('adetailer_denoise_mask'),
     fp32: true,
   });
-  // @ts-expect-error - detailerVaeSource is generic
-  g.addEdge(detailerVaeSource, 'vae', createDenoiseMask, 'vae');
-  // @ts-expect-error - faceOff is generic
-  g.addEdge(faceOff, 'image', createDenoiseMask, 'image');
-  // @ts-expect-error - faceOff is generic
-  g.addEdge(faceOff, 'mask', createDenoiseMask, 'mask');
+  addEdge(detailerVaeSource, 'vae', createDenoiseMask, 'vae');
+  addEdge(faceOff, 'image', createDenoiseMask, 'image');
+  addEdge(faceOff, 'mask', createDenoiseMask, 'mask');
 
   // 3. Create Image to Latents (i2l) node for the face crop
   const i2l = g.addNode({
@@ -169,10 +167,8 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
     id: getPrefixedId('adetailer_i2l'),
     fp32: true,
   });
-  // @ts-expect-error - detailerVaeSource is generic
-  g.addEdge(detailerVaeSource, 'vae', i2l, 'vae');
-  // @ts-expect-error - faceOff is generic
-  g.addEdge(faceOff, 'image', i2l, 'image');
+  addEdge(detailerVaeSource, 'vae', i2l, 'vae');
+  addEdge(faceOff, 'image', i2l, 'image');
 
   // 4. Create Noise node matched to face crop dimensions
   const noise = g.addNode({
@@ -180,12 +176,9 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
     id: getPrefixedId('adetailer_noise'),
     use_cpu: state.params.shouldUseCpuNoise,
   });
-  // @ts-expect-error - seed is generic
-  g.addEdge(seed, 'value', noise, 'seed');
-  // @ts-expect-error - faceOff is generic
-  g.addEdge(faceOff, 'width', noise, 'width');
-  // @ts-expect-error - faceOff is generic
-  g.addEdge(faceOff, 'height', noise, 'height');
+  addEdge(seed, 'value', noise, 'seed');
+  addEdge(faceOff, 'width', noise, 'width');
+  addEdge(faceOff, 'height', noise, 'height');
 
   // 5. Handle custom detailing prompt overrides
   let adetailerPosCond = detailerPosCond;
@@ -198,18 +191,15 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
         prompt: adetailer.prompt,
         style: adetailer.prompt,
       });
-      // @ts-expect-error - loader is generic
-      g.addEdge(detailerModelLoader, 'clip', customPosCond, 'clip');
-      // @ts-expect-error - loader is generic
-      g.addEdge(detailerModelLoader, 'clip2', customPosCond, 'clip2');
+      addEdge(detailerModelLoader, 'clip', customPosCond, 'clip');
+      addEdge(detailerModelLoader, 'clip2', customPosCond, 'clip2');
 
       const customPosCondCollect = g.addNode({
         type: 'collect',
         id: getPrefixedId('adetailer_pos_cond_collect'),
       });
-      // @ts-expect-error - customPosCond is generic
-      g.addEdge(customPosCond, 'conditioning', customPosCondCollect, 'item');
-      adetailerPosCond = customPosCondCollect as unknown as Invocation<unknown>;
+      addEdge(customPosCond, 'conditioning', customPosCondCollect, 'item');
+      adetailerPosCond = customPosCondCollect;
     } else {
       // SD1.5 fallback
       const customPosCond = g.addNode({
@@ -217,16 +207,14 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
         id: getPrefixedId('adetailer_pos_cond'),
         prompt: adetailer.prompt,
       });
-      // @ts-expect-error - loader is generic
-      g.addEdge(detailerModelLoader, 'clip', customPosCond, 'clip');
+      addEdge(detailerModelLoader, 'clip', customPosCond, 'clip');
 
       const customPosCondCollect = g.addNode({
         type: 'collect',
         id: getPrefixedId('adetailer_pos_cond_collect'),
       });
-      // @ts-expect-error - customPosCond is generic
-      g.addEdge(customPosCond, 'conditioning', customPosCondCollect, 'item');
-      adetailerPosCond = customPosCondCollect as unknown as Invocation<unknown>;
+      addEdge(customPosCond, 'conditioning', customPosCondCollect, 'item');
+      adetailerPosCond = customPosCondCollect;
     }
   }
 
@@ -241,33 +229,23 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
     denoising_end: 1.0,
   });
 
-  // @ts-expect-error - loader is generic
-  g.addEdge(detailerModelLoader, 'unet', denoise, 'unet');
-  // @ts-expect-error - i2l is generic
-  g.addEdge(i2l, 'latents', denoise, 'latents');
-  // @ts-expect-error - noise is generic
-  g.addEdge(noise, 'noise', denoise, 'noise');
-  // @ts-expect-error - createDenoiseMask is generic
-  g.addEdge(createDenoiseMask, 'denoise_mask', denoise, 'denoise_mask');
+  addEdge(detailerModelLoader, 'unet', denoise, 'unet');
+  addEdge(i2l, 'latents', denoise, 'latents');
+  addEdge(noise, 'noise', denoise, 'noise');
+  addEdge(createDenoiseMask, 'denoise_mask', denoise, 'denoise_mask');
 
   // Wire conditioning to denoise
-  // @ts-expect-error - adetailerPosCond is generic
   if (adetailerPosCond.type === 'collect') {
-    // @ts-expect-error - adetailerPosCond is generic
-    g.addEdge(adetailerPosCond, 'collection', denoise, 'positive_conditioning');
+    addEdge(adetailerPosCond, 'collection', denoise, 'positive_conditioning');
   } else {
-    // @ts-expect-error - adetailerPosCond is generic
-    g.addEdge(adetailerPosCond, 'conditioning', denoise, 'positive_conditioning');
+    addEdge(adetailerPosCond, 'conditioning', denoise, 'positive_conditioning');
   }
   
   if (detailerNegCond) {
-    // @ts-expect-error - detailerNegCond is generic
     if (detailerNegCond.type === 'collect') {
-      // @ts-expect-error - detailerNegCond is generic
-      g.addEdge(detailerNegCond, 'collection', denoise, 'negative_conditioning');
+      addEdge(detailerNegCond, 'collection', denoise, 'negative_conditioning');
     } else {
-      // @ts-expect-error - detailerNegCond is generic
-      g.addEdge(detailerNegCond, 'conditioning', denoise, 'negative_conditioning');
+      addEdge(detailerNegCond, 'conditioning', denoise, 'negative_conditioning');
     }
   }
 
@@ -277,12 +255,10 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
     id: getPrefixedId('adetailer_l2i'),
     fp32: true,
   });
-  // @ts-expect-error - detailerVaeSource is generic
-  g.addEdge(detailerVaeSource, 'vae', l2i, 'vae');
-  // @ts-expect-error - denoise is generic
-  g.addEdge(denoise, 'latents', l2i, 'latents');
+  addEdge(detailerVaeSource, 'vae', l2i, 'vae');
+  addEdge(denoise, 'latents', l2i, 'latents');
 
-  let pasteMask: unknown = faceOff;
+  let pasteMask: AnyInvocation = faceOff;
   let pasteMaskField = 'mask';
 
   if (adetailer.maskBlur > 0) {
@@ -292,8 +268,7 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
       radius: adetailer.maskBlur,
       blur_type: 'gaussian',
     });
-    // @ts-expect-error - faceOff is generic
-    g.addEdge(faceOff, 'mask', blurMask, 'image');
+    addEdge(faceOff, 'mask', blurMask, 'image');
     pasteMask = blurMask;
     pasteMaskField = 'image';
   }
@@ -304,17 +279,12 @@ export const addADetailer = (arg: AddADetailerArg): Invocation<ImageOutputNodes>
     id: getPrefixedId('adetailer_paste'),
     crop: true,
   });
-  // @ts-expect-error - imageOutput is generic
-  g.addEdge(imageOutput, 'image', paste, 'base_image');
-  // @ts-expect-error - l2i is generic
-  g.addEdge(l2i, 'image', paste, 'image');
-  // @ts-expect-error - pasteMask is generic
-  g.addEdge(pasteMask, pasteMaskField, paste, 'mask');
-  // @ts-expect-error - faceOff is generic
-  g.addEdge(faceOff, 'x', paste, 'x');
-  // @ts-expect-error - faceOff is generic
-  g.addEdge(faceOff, 'y', paste, 'y');
+  addEdge(imageOutput, 'image', paste, 'base_image');
+  addEdge(l2i, 'image', paste, 'image');
+  addEdge(pasteMask, pasteMaskField, paste, 'mask');
+  addEdge(faceOff, 'x', paste, 'x');
+  addEdge(faceOff, 'y', paste, 'y');
 
   // Return the final blended image node to complete the pipeline
-  return paste as unknown as Invocation<ImageOutputNodes>;
+  return paste;
 };

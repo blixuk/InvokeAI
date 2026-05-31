@@ -121,6 +121,21 @@ export type SpandrelImageToImageModelConfig = Extract<InternalAnyModelConfig, { 
 export type CheckpointModelConfig = Extract<InternalAnyModelConfig, { type: 'main'; format: 'checkpoint' }>;
 export type CLIPVisionModelConfig = Extract<InternalAnyModelConfig, { type: 'clip_vision' }>;
 export type SigLIPModelConfig = Extract<InternalAnyModelConfig, { type: 'siglip' }>;
+export type DetectorModelConfig = {
+  key: string;
+  hash: string;
+  path: string;
+  file_size: number;
+  name: string;
+  description: string | null;
+  source: string;
+  source_type: string;
+  source_api_response?: string | null;
+  cover_image?: string | null;
+  base: 'any';
+  type: 'detector';
+  format: 'onnx' | 'checkpoint';
+};
 export type FLUXReduxModelConfig = Extract<InternalAnyModelConfig, { type: 'flux_redux' }>;
 type ApiModelConfig = Extract<InternalAnyModelConfig, { format: 'api' }>;
 type UnknownModelConfig = Extract<InternalAnyModelConfig, { type: 'unknown' }>;
@@ -142,7 +157,7 @@ type ExternalResolutionPreset = {
   height: number;
 };
 
-export type ExternalModelCapabilities = {
+type ExternalModelCapabilities = {
   modes: ('txt2img' | 'img2img' | 'inpaint')[];
   supports_reference_images?: boolean;
   supports_negative_prompt?: boolean;
@@ -159,7 +174,7 @@ export type ExternalModelCapabilities = {
   input_image_required_for?: ('txt2img' | 'img2img' | 'inpaint')[] | null;
 };
 
-export type ExternalApiModelDefaultSettings = {
+type ExternalApiModelDefaultSettings = {
   width?: number | null;
   height?: number | null;
   steps?: number | null;
@@ -167,7 +182,7 @@ export type ExternalApiModelDefaultSettings = {
   num_images?: number | null;
 };
 
-export type ExternalPanelControlName =
+type ExternalPanelControlName =
   | 'negative_prompt'
   | 'reference_images'
   | 'dimensions'
@@ -175,7 +190,7 @@ export type ExternalPanelControlName =
   | 'steps'
   | 'guidance';
 
-export type ExternalModelPanelControl = {
+type ExternalModelPanelControl = {
   name: ExternalPanelControlName;
   slider_min?: number | null;
   slider_max?: number | null;
@@ -186,7 +201,7 @@ export type ExternalModelPanelControl = {
   marks?: number[] | null;
 };
 
-export type ExternalModelPanelSchema = {
+type ExternalModelPanelSchema = {
   prompts: ExternalModelPanelControl[];
   image: ExternalModelPanelControl[];
   generation: ExternalModelPanelControl[];
@@ -214,7 +229,7 @@ export type ExternalApiModelConfig = {
   tags?: string[] | null;
   is_default?: boolean;
 };
-export type AnyModelConfig = InternalAnyModelConfig;
+export type AnyModelConfig = InternalAnyModelConfig | DetectorModelConfig;
 export type AnyModelConfigWithExternal = AnyModelConfig | ExternalApiModelConfig;
 export type MainOrExternalModelConfig = MainModelConfig | ExternalApiModelConfig;
 
@@ -421,6 +436,10 @@ export const isSpandrelImageToImageModelConfig = (
 
 export const isSigLipModelConfig = (config: AnyModelConfig): config is SigLIPModelConfig => {
   return config.type === 'siglip';
+};
+
+export const isDetectorModelConfig = (config: AnyModelConfig): config is DetectorModelConfig => {
+  return config.type === 'detector';
 };
 
 export const isFluxReduxModelConfig = (config: AnyModelConfig): config is FLUXReduxModelConfig => {

@@ -10,6 +10,7 @@ import { memo, useCallback, useMemo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { PiMagicWandBold, PiSquaresFourBold } from 'react-icons/pi';
 import type { ImageDTO } from 'services/api/types';
+
 import { RefImageGridModal } from './RefImageGridModal';
 import { RefImageProcessorModal } from './RefImageProcessorModal';
 
