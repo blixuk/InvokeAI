@@ -1,12 +1,12 @@
 import {
   Box,
+  Button,
   Flex,
   IconButton,
-  Button,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
+  MenuList,
 } from '@invoke-ai/ui-library';
 import { useStore } from '@nanostores/react';
 import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
@@ -14,21 +14,21 @@ import { overlayScrollbarsParams } from 'common/components/OverlayScrollbars/con
 import {
   selectIsCogView4,
   selectIsExternal,
-  selectIsSDXL,
-  selectIsFlux2,
   selectIsFLUX,
+  selectIsFlux2,
+  selectIsSDXL,
 } from 'features/controlLayers/store/paramsSlice';
 import { Prompts } from 'features/parameters/components/Prompts/Prompts';
 import { ADetailerSettingsAccordion } from 'features/settingsAccordions/components/ADetailerSettingsAccordion/ADetailerSettingsAccordion';
 import { AdvancedSettingsAccordion } from 'features/settingsAccordions/components/AdvancedSettingsAccordion/AdvancedSettingsAccordion';
 import { ExternalSettingsAccordion } from 'features/settingsAccordions/components/ExternalSettingsAccordion/ExternalSettingsAccordion';
 import { GenerationSettingsAccordion } from 'features/settingsAccordions/components/GenerationSettingsAccordion/GenerationSettingsAccordion';
-import { SegaSettingsAccordion } from 'features/settingsAccordions/components/SegaSettingsAccordion/SegaSettingsAccordion';
-import { PidSettingsAccordion } from 'features/settingsAccordions/components/PidSettingsAccordion/PidSettingsAccordion';
 import { GenerateTabImageSettingsAccordion } from 'features/settingsAccordions/components/ImageSettingsAccordion/GenerateTabImageSettingsAccordion';
+import { PidSettingsAccordion } from 'features/settingsAccordions/components/PidSettingsAccordion/PidSettingsAccordion';
 import { RefinerSettingsAccordion } from 'features/settingsAccordions/components/RefinerSettingsAccordion/RefinerSettingsAccordion';
-import { UpscaleSettingsAccordion } from 'features/settingsAccordions/components/UpscaleSettingsAccordion/UpscaleSettingsAccordion';
 import { SeedVarianceSettingsAccordion } from 'features/settingsAccordions/components/SeedVarianceSettingsAccordion/SeedVarianceSettingsAccordion';
+import { SegaSettingsAccordion } from 'features/settingsAccordions/components/SegaSettingsAccordion/SegaSettingsAccordion';
+import { UpscaleSettingsAccordion } from 'features/settingsAccordions/components/UpscaleSettingsAccordion/UpscaleSettingsAccordion';
 import { StylePresetMenu } from 'features/stylePresets/components/StylePresetMenu';
 import { StylePresetMenuTrigger } from 'features/stylePresets/components/StylePresetMenuTrigger';
 import { $isStylePresetsMenuOpen } from 'features/stylePresets/store/stylePresetSlice';
@@ -37,7 +37,7 @@ import {
   removeOptionalModule,
 } from 'features/ui/store/uiSlice';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { memo, useCallback, useMemo } from 'react';
 import { PiPlusBold, PiXBold } from 'react-icons/pi';
 
@@ -48,7 +48,7 @@ const overlayScrollbarsStyles: CSSProperties = {
 
 interface OptionalModuleWrapperProps {
   id: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const OptionalModuleWrapper = memo(({ id, children }: OptionalModuleWrapperProps) => {
@@ -95,8 +95,30 @@ const OptionalModuleWrapper = memo(({ id, children }: OptionalModuleWrapperProps
 });
 OptionalModuleWrapper.displayName = 'OptionalModuleWrapper';
 
+interface AddModuleMenuItemProps {
+  id: string;
+  label: string;
+  onClick: (id: string) => void;
+}
+
+const AddModuleMenuItem = memo(({ id, label, onClick }: AddModuleMenuItemProps) => {
+  const handleClick = useCallback(() => {
+    onClick(id);
+  }, [onClick, id]);
+
+  return (
+    <MenuItem icon={<PiPlusBold />} onClick={handleClick}>
+      {label}
+    </MenuItem>
+  );
+});
+AddModuleMenuItem.displayName = 'AddModuleMenuItem';
+
 export const ParametersPanelGenerate = memo(() => {
   const dispatch = useAppDispatch();
+  const handleOptionalModuleClick = useCallback((id: string) => {
+    dispatch(addOptionalModule(id));
+  }, [dispatch]);
   const isSDXL = useAppSelector(selectIsSDXL);
   const isCogview4 = useAppSelector(selectIsCogView4);
   const isExternal = useAppSelector(selectIsExternal);
@@ -200,13 +222,12 @@ export const ParametersPanelGenerate = memo(() => {
                       </MenuButton>
                       <MenuList zIndex={3}>
                         {availableModules.map((module) => (
-                          <MenuItem
+                          <AddModuleMenuItem
                             key={module.id}
-                            icon={<PiPlusBold />}
-                            onClick={() => dispatch(addOptionalModule(module.id))}
-                          >
-                            {module.label}
-                          </MenuItem>
+                            id={module.id}
+                            label={module.label}
+                            onClick={handleOptionalModuleClick}
+                          />
                         ))}
                       </MenuList>
                     </Menu>
