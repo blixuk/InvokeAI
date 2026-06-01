@@ -524,6 +524,70 @@ def test_flux2_lcm_scheduler_setup_passes_mu():
     assert scheduler.received_mu == pytest.approx(0.42)
 
 
+def test_flux2_sega_dynamic_rope_scaling():
+    from invokeai.backend.flux2.denoise import denoise
+    import diffusers.models.embeddings as diffusers_embeddings
+
+    # We mock diffusers' apply_rotary_emb to trace its calls
+    calls = []
+    def mock_apply_rotary_emb(x, freqs_cis, **kwargs):
+        calls.append(freqs_cis)
+        return x
+
+    class DummyModel(torch.nn.Module):
+        def forward(
+            self,
+            hidden_states: torch.Tensor,
+            encoder_hidden_states: torch.Tensor,
+            timestep: torch.Tensor,
+            img_ids: torch.Tensor,
+            txt_ids: torch.Tensor,
+            guidance: torch.Tensor,
+            return_dict: bool = False,
+        ):
+            # Evaluate the attention patch by simulating a call to apply_rotary_emb
+            cos = torch.ones(4, 128)
+            sin = torch.zeros(4, 128)
+            diffusers_embeddings.apply_rotary_emb(hidden_states, (cos, sin))
+            return (torch.zeros_like(hidden_states),)
+
+    orig_apply_rotary_emb = diffusers_embeddings.apply_rotary_emb
+    diffusers_embeddings.apply_rotary_emb = mock_apply_rotary_emb
+    
+    try:
+        # Create a dummy packed latent grid (e.g. 2x2 packed latent = 4 tokens)
+        img = torch.randn(1, 4, 128)
+        img_ids = torch.zeros(1, 4, 4, dtype=torch.long)
+        # Set spatial coordinates to represent a 2x2 grid (H max = 1, W max = 1)
+        img_ids[0, 0, 1] = 0; img_ids[0, 0, 2] = 0
+        img_ids[0, 1, 1] = 0; img_ids[0, 1, 2] = 1
+        img_ids[0, 2, 1] = 1; img_ids[0, 2, 2] = 0
+        img_ids[0, 3, 1] = 1; img_ids[0, 3, 2] = 1
+
+        denoise(
+            model=DummyModel(),
+            img=img,
+            img_ids=img_ids,
+            txt=torch.zeros(1, 4, 8),
+            txt_ids=torch.zeros(1, 4, 4, dtype=torch.long),
+            timesteps=[0.75, 0.5, 0.0],
+            step_callback=lambda _: None,
+            guidance=1.0,
+            cfg_scale=[1.0, 1.0],
+            scheduler=None, # uses manual Euler
+            sega_enabled=True,
+        )
+    finally:
+        diffusers_embeddings.apply_rotary_emb = orig_apply_rotary_emb
+
+    # Verify apply_rotary_emb was called with modified/scaled frequencies
+    assert len(calls) > 0
+    scaled_cos, scaled_sin = calls[0]
+    # Check that scales were applied (scaled_cos elements should not be exactly 1.0 because energy scaling is < 1.0)
+    assert not torch.allclose(scaled_cos, torch.ones_like(scaled_cos))
+
+
+
 @pytest.mark.parametrize(
     "scheduler_name",
     [

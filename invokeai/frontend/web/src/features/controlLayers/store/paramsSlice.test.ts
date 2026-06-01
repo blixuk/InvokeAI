@@ -152,17 +152,42 @@ describe('paramsSliceConfig persisted state migration', () => {
     };
     delete v2State.qwenImageVaeModel;
     delete v2State.qwenImageQwenVLEncoderModel;
+    delete v2State.segaEnabled;
 
     const result = migrate?.(v2State) as ReturnType<typeof getInitialParamsState>;
 
-    expect(result._version).toBe(3);
+    expect(result._version).toBe(4);
     expect(result.qwenImageVaeModel).toBeNull();
     expect(result.qwenImageQwenVLEncoderModel).toBeNull();
+    expect(result.segaEnabled).toBe(false);
     // Existing params should be preserved
     expect(result.positivePrompt).toBe('a fluffy cat');
     expect(result.seed).toBe(42);
     expect(result.shouldRandomizeSeed).toBe(false);
     expect(result.dimensions.width).toBe(768);
     expect(result.dimensions.height).toBe(768);
+  });
+
+  it('backfills segaEnabled when migrating from v3 and preserves existing params', () => {
+    expect(migrate).toBeDefined();
+
+    const initial = getInitialParamsState();
+    const v3State: Record<string, unknown> = {
+      ...initial,
+      _version: 3,
+      positivePrompt: 'a fluffy cat',
+      seed: 42,
+      shouldRandomizeSeed: false,
+    };
+    delete v3State.segaEnabled;
+
+    const result = migrate?.(v3State) as ReturnType<typeof getInitialParamsState>;
+
+    expect(result._version).toBe(4);
+    expect(result.segaEnabled).toBe(false);
+    // Existing params should be preserved
+    expect(result.positivePrompt).toBe('a fluffy cat');
+    expect(result.seed).toBe(42);
+    expect(result.shouldRandomizeSeed).toBe(false);
   });
 });

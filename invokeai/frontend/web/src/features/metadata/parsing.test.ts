@@ -131,3 +131,31 @@ describe('Qwen metadata parsing', () => {
     expect(mockStore.dispatch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('SEGA metadata parsing', () => {
+  it('does not report missing SEGA metadata keys as available', async () => {
+    const store = createStore();
+    const hasMetadata = await MetadataUtils.hasMetadataByHandlers({
+      metadata: {},
+      handlers: [ImageMetadataHandlers.SegaEnabled],
+      store,
+      require: 'all',
+    });
+    expect(hasMetadata).toBe(false);
+  });
+
+  it('recalls SEGA handler with actual value when metadata key is present', async () => {
+    const store = createStore();
+    const recalled = await MetadataUtils.recallByHandlers({
+      metadata: {
+        sega_enabled: true,
+      },
+      handlers: [ImageMetadataHandlers.SegaEnabled],
+      store,
+      silent: true,
+    });
+    expect(recalled.size).toBe(1);
+    const mockStore = store as ReturnType<typeof createMockStore>;
+    expect(mockStore.dispatch).toHaveBeenCalledTimes(1);
+  });
+});

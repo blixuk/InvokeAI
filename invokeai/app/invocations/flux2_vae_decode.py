@@ -3,6 +3,7 @@
 Decodes latents to images using the FLUX.2 32-channel VAE (AutoencoderKLFlux2).
 """
 
+from contextlib import nullcontext
 import torch
 from einops import rearrange
 from PIL import Image
@@ -20,6 +21,7 @@ from invokeai.app.invocations.model import VAEField
 from invokeai.app.invocations.primitives import ImageOutput
 from invokeai.app.services.shared.invocation_context import InvocationContext
 from invokeai.backend.model_manager.load.load_base import LoadedModel
+from invokeai.backend.stable_diffusion.vae_tiling import patch_vae_tiling_params
 from invokeai.backend.util.devices import TorchDevice
 
 
@@ -28,7 +30,7 @@ from invokeai.backend.util.devices import TorchDevice
     title="Latents to Image - FLUX2",
     tags=["latents", "image", "vae", "l2i", "flux2", "klein"],
     category="latents",
-    version="1.0.0",
+    version="1.1.0",
     classification=Classification.Prototype,
 )
 class Flux2VaeDecodeInvocation(BaseInvocation, WithMetadata, WithBoard):
@@ -42,8 +44,16 @@ class Flux2VaeDecodeInvocation(BaseInvocation, WithMetadata, WithBoard):
         description=FieldDescriptions.vae,
         input=Input.Connection,
     )
+    tiled: bool = InputField(default=False, description=FieldDescriptions.tiled)
+    tile_size: int = InputField(default=0, multiple_of=8, description=FieldDescriptions.vae_tile_size)
 
-    def _vae_decode(self, vae_info: LoadedModel, latents: torch.Tensor) -> Image.Image:
+    def _vae_decode(
+        self,
+        vae_info: LoadedModel,
+        latents: torch.Tensor,
+        use_tiling: bool = False,
+        tile_size: int = 0,
+    ) -> Image.Image:
         """Decode latents to image using FLUX.2 VAE.
 
         Input latents should already be in the correct space after BN denormalization
@@ -54,8 +64,26 @@ class Flux2VaeDecodeInvocation(BaseInvocation, WithMetadata, WithBoard):
             device = TorchDevice.choose_torch_device()
             latents = latents.to(device=device, dtype=vae_dtype)
 
+            if use_tiling:
+                vae.enable_tiling()
+            else:
+                vae.disable_tiling()
+
+            tiling_context = nullcontext()
+            if tile_size > 0:
+                tiling_context = patch_vae_tiling_params(
+                    vae,
+                    tile_sample_min_size=tile_size,
+                    tile_latent_min_size=tile_size // 8,
+                    tile_overlap_factor=0.25,
+                )
+
+            # clear memory before decoding
+            TorchDevice.empty_cache()
+
             # Decode using diffusers API
-            decoded = vae.decode(latents, return_dict=False)[0]
+            with tiling_context:
+                decoded = vae.decode(latents, return_dict=False)[0]
 
         # Convert from [-1, 1] to [0, 1] then to [0, 255] PIL image
         img = (decoded / 2 + 0.5).clamp(0, 1)
@@ -68,6 +96,13 @@ class Flux2VaeDecodeInvocation(BaseInvocation, WithMetadata, WithBoard):
     @torch.no_grad()
     def invoke(self, context: InvocationContext) -> ImageOutput:
         latents = context.tensors.load(self.latents.latents_name)
+
+        use_tiling = self.tiled or context.config.get().force_tiled_decode
+        # Automatically enable tiling for extremely large latents to prevent OOM
+        # latents shape is (B, 32, H_latent, W_latent) where H_latent = H_pixel / 8
+        if not use_tiling and latents.shape[-1] >= 256:  # 256 * 8 = 2048px
+            context.logger.info("Automatically enabling tiled VAE decode to prevent CUDA out of memory on high-resolution image.")
+            use_tiling = True
 
         # Log latent statistics for debugging black image issues
         context.logger.debug(
@@ -85,7 +120,12 @@ class Flux2VaeDecodeInvocation(BaseInvocation, WithMetadata, WithBoard):
 
         vae_info = context.models.load(self.vae.vae)
         context.util.signal_progress("Running VAE")
-        image = self._vae_decode(vae_info=vae_info, latents=latents)
+        image = self._vae_decode(
+            vae_info=vae_info,
+            latents=latents,
+            use_tiling=use_tiling,
+            tile_size=self.tile_size,
+        )
 
         TorchDevice.empty_cache()
         image_dto = context.images.save(image=image)

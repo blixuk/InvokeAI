@@ -51,6 +51,7 @@ import {
   setSeamlessXAxis,
   setSeamlessYAxis,
   setSeed,
+  setSegaEnabled,
   setSteps,
   setZImageScheduler,
   setZImageSeedVarianceEnabled,
@@ -1619,6 +1620,24 @@ const SeedreamOptimizePrompt: SingleMetadataHandler<boolean> = {
 };
 //#endregion Seedream Optimize Prompt
 
+//#region Sega Enabled
+const SegaEnabled: SingleMetadataHandler<boolean> = {
+  [SingleMetadataKey]: true,
+  type: 'SegaEnabled',
+  parse: (metadata, _store) => {
+    const raw = getProperty(metadata, 'sega_enabled');
+    const parsed = z.boolean().parse(raw);
+    return Promise.resolve(parsed);
+  },
+  recall: (value, store) => {
+    store.dispatch(setSegaEnabled(value));
+  },
+  i18nKey: 'metadata.segaEnabled',
+  LabelComponent: MetadataLabel,
+  ValueComponent: ({ value }: SingleMetadataValueProps<boolean>) => <MetadataPrimitiveValue value={value} />,
+};
+//#endregion Sega Enabled
+
 export const ImageMetadataHandlers = {
   CreatedBy,
   GenerationMode,
@@ -1677,6 +1696,7 @@ export const ImageMetadataHandlers = {
   OpenaiInputFidelity,
   SeedreamWatermark,
   SeedreamOptimizePrompt,
+  SegaEnabled,
   // TODO: These had parsers in the prev implementation, but they were never actually used?
   // controlNet: parseControlNet,
   // controlNets: parseAllControlNets,

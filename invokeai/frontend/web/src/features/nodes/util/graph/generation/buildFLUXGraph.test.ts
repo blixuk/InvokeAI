@@ -109,6 +109,9 @@ const mockParams = {
   fluxVAE: null,
   t5EncoderModel: null,
   clipEmbedModel: null,
+  usePiDDecode: false,
+  pidDecodeSteps: 4,
+  pidDecodeSharpness: 0.8,
 };
 
 vi.mock('features/controlLayers/store/paramsSlice', () => ({

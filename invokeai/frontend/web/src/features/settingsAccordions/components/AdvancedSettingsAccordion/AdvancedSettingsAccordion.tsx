@@ -21,6 +21,7 @@ import ParamCLIPGEmbedModelSelect from 'features/parameters/components/Advanced/
 import ParamCLIPLEmbedModelSelect from 'features/parameters/components/Advanced/ParamCLIPLEmbedModelSelect';
 import ParamClipSkip from 'features/parameters/components/Advanced/ParamClipSkip';
 import ParamFlux2KleinModelSelect from 'features/parameters/components/Advanced/ParamFlux2KleinModelSelect';
+import { ParamPiDDecode } from 'features/parameters/components/Advanced/ParamPiDDecode';
 import ParamQwenImageComponentSourceSelect from 'features/parameters/components/Advanced/ParamQwenImageComponentSourceSelect';
 import ParamQwenImageQuantization from 'features/parameters/components/Advanced/ParamQwenImageQuantization';
 import ParamT5EncoderModelSelect from 'features/parameters/components/Advanced/ParamT5EncoderModelSelect';
@@ -141,6 +142,11 @@ export const AdvancedSettingsAccordion = memo(() => {
         {isFlux2 && (
           <FormControlGroup>
             <ParamFlux2KleinModelSelect />
+          </FormControlGroup>
+        )}
+        {(isFLUX || isFlux2) && (
+          <FormControlGroup>
+            <ParamPiDDecode />
           </FormControlGroup>
         )}
         {isSD3 && (

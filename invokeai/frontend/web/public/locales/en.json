@@ -1023,6 +1023,7 @@
         "openaiInputFidelity": "OpenAI Input Fidelity",
         "seedreamWatermark": "Seedream Watermark",
         "seedreamOptimizePrompt": "Seedream Optimize Prompt",
+        "segaEnabled": "SEGA (Spectral-Energy Guided Attention)",
         "guidance": "Guidance",
         "height": "Height",
         "imageDetails": "Image Details",
@@ -1984,6 +1985,13 @@
         "invalidBboxDesc": "The bounding box has no valid dimensions"
     },
     "popovers": {
+        "usePiDDecode": {
+            "heading": "Pixel Diffusion Decoder (PiD)",
+            "paragraphs": [
+                "NVIDIA's Pixel Diffusion Decoder (PiD) leverages a distilled conditional PixelDiT to decode latents into pixels.",
+                "It synthesizes rich, high-frequency details and ultra-sharp edges in just 4 steps, bypassing the standard blurry VAE decoder."
+            ]
+        },
         "clipSkip": {
             "heading": "CLIP Skip",
             "paragraphs": [

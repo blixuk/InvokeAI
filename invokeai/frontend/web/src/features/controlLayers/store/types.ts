@@ -773,7 +773,7 @@ export const zInfillMethod = z.enum(['patchmatch', 'lama', 'cv2', 'color', 'tile
 export type InfillMethod = z.infer<typeof zInfillMethod>;
 
 export const zParamsState = z.object({
-  _version: z.literal(3),
+  _version: z.literal(4),
   maskBlur: z.number(),
   maskBlurMethod: zParameterMaskBlurMethod,
   canvasCoherenceMode: zParameterCanvasCoherenceMode,
@@ -843,6 +843,7 @@ export const zParamsState = z.object({
   qwenImageQwenVLEncoderModel: zModelIdentifierField.nullable(), // Optional: Standalone Qwen2.5-VL encoder
   qwenImageQuantization: z.enum(['none', 'int8', 'nf4']), // BitsAndBytes quantization for Qwen VL encoder
   qwenImageShift: z.number().nullable(), // Sigma schedule shift override (e.g. 3.0 for Lightning LoRAs)
+  segaEnabled: z.boolean(),
   // Z-Image Seed Variance Enhancer settings
   zImageSeedVarianceEnabled: z.boolean(),
   zImageSeedVarianceStrength: z.number().min(0).max(2),
@@ -858,11 +859,17 @@ export const zParamsState = z.object({
   // Seedream-specific external options
   seedreamWatermark: z.boolean().default(false),
   seedreamOptimizePrompt: z.boolean().default(false),
+  usePiDDecode: z.boolean(),
+  pidDecodeSteps: z.number().min(1).max(20),
+  pidDecodeSharpness: z.number().min(0.0).max(2.0),
+  pidDecodeTextEncoder: z.enum(['gemma-2-2b-it', 'gemma-2-2b-it-abliterated']),
+  pidDecodeModelVariant: z.enum(['2k', '4k']),
+  pidDecodeScale: z.number().min(1).max(8),
   dimensions: zDimensionsState,
 });
 export type ParamsState = z.infer<typeof zParamsState>;
 export const getInitialParamsState = (): ParamsState => ({
-  _version: 3,
+  _version: 4,
   maskBlur: 16,
   maskBlurMethod: 'box',
   canvasCoherenceMode: 'Gaussian Blur',
@@ -928,6 +935,7 @@ export const getInitialParamsState = (): ParamsState => ({
   qwenImageQwenVLEncoderModel: null,
   qwenImageQuantization: 'none' as const,
   qwenImageShift: null,
+  segaEnabled: false,
   zImageSeedVarianceEnabled: false,
   zImageSeedVarianceStrength: 0.1,
   zImageSeedVarianceRandomizePercent: 50,
@@ -939,6 +947,12 @@ export const getInitialParamsState = (): ParamsState => ({
   geminiThinkingLevel: null,
   seedreamWatermark: false,
   seedreamOptimizePrompt: false,
+  usePiDDecode: false,
+  pidDecodeSteps: 4,
+  pidDecodeSharpness: 0.8,
+  pidDecodeTextEncoder: 'gemma-2-2b-it',
+  pidDecodeModelVariant: '2k',
+  pidDecodeScale: 4,
   dimensions: {
     width: 512,
     height: 512,

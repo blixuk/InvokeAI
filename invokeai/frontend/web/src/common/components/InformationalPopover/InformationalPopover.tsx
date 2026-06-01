@@ -88,10 +88,12 @@ const Content = ({ data, feature, hideDisable }: ContentProps) => {
   const heading = useMemo<string | undefined>(() => t(`popovers.${feature}.heading`), [feature, t]);
 
   const paragraphs = useMemo<string[]>(
-    () =>
-      t<string, { returnObjects: true }, string[]>(`popovers.${feature}.paragraphs`, {
+    () => {
+      const val = t(`popovers.${feature}.paragraphs`, {
         returnObjects: true,
-      }) ?? [],
+      });
+      return Array.isArray(val) ? val : [];
+    },
     [feature, t]
   );
 

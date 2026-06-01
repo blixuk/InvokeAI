@@ -4,6 +4,7 @@ This module provides the denoising function for FLUX.2 Klein models,
 which use Qwen3 as the text encoder instead of CLIP+T5.
 """
 
+from contextlib import contextmanager
 import inspect
 import math
 from typing import Any, Callable
@@ -12,8 +13,113 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+import diffusers.models.embeddings as diffusers_embeddings
 from invokeai.backend.rectified_flow.rectified_flow_inpaint_extension import RectifiedFlowInpaintExtension
 from invokeai.backend.stable_diffusion.diffusers_pipeline import PipelineIntermediateState
+from invokeai.backend.util.logging import InvokeAILogger
+
+logger = InvokeAILogger.get_logger(__name__)
+
+
+def compute_sega_rope_scales(
+    img: torch.Tensor,
+    original_seq_len: int,
+    packed_h: int,
+    packed_w: int,
+    num_rope_dims: int,
+    alpha_base: float = 1.0,
+) -> torch.Tensor:
+    """Computes dynamic RoPE frequency scales based on 2D FFT spectral energy."""
+    # Slice off reference images
+    x = img[:, :original_seq_len, :]
+    B, SeqLen, C = x.shape
+    
+    # Reshape back to spatial grid
+    x_grid = x.transpose(1, 2).reshape(B, C, packed_h, packed_w)
+    
+    # Compute 2D FFT
+    fft_repr = torch.fft.rfft2(x_grid.float(), dim=(-2, -1))
+    spectral_energy = torch.abs(fft_repr) ** 2
+    
+    # Average across channels and batch
+    mean_energy = spectral_energy.mean(dim=(0, 1))
+    
+    # Compute 1D energy profiles for H and W
+    energy_h = mean_energy.mean(dim=1)
+    energy_w = mean_energy.mean(dim=0)
+    
+    # Interpolate to 28 unique frequencies (for 56 dimensions)
+    energy_h_resized = torch.nn.functional.interpolate(
+        energy_h.view(1, 1, -1),
+        size=28,
+        mode="linear",
+        align_corners=False
+    ).view(-1)
+    
+    energy_w_resized = torch.nn.functional.interpolate(
+        energy_w.view(1, 1, -1),
+        size=28,
+        mode="linear",
+        align_corners=False
+    ).view(-1)
+    
+    # Compute dynamic scales
+    scale_h_uniq = alpha_base / (1.0 + torch.log1p(energy_h_resized))
+    scale_w_uniq = alpha_base / (1.0 + torch.log1p(energy_w_resized))
+    
+    # Repeat for conjugate dimensions
+    scale_h = torch.repeat_interleave(scale_h_uniq, 2)
+    scale_w = torch.repeat_interleave(scale_w_uniq, 2)
+    
+    # Combine (T, H, W)
+    scale_t = torch.ones(16, device=img.device, dtype=img.dtype)
+    scales = torch.cat([scale_t, scale_h.to(img.device, img.dtype), scale_w.to(img.device, img.dtype)])
+    
+    return scales
+
+
+@contextmanager
+def patch_rope_for_sega(img: torch.Tensor, original_seq_len: int, img_ids: torch.Tensor, sega_enabled: bool = False):
+    if not sega_enabled:
+        yield
+        return
+        
+    orig_apply_rotary_emb = diffusers_embeddings.apply_rotary_emb
+    
+    # Precompute packed height and width from img_ids
+    # img_ids coordinates: 1 corresponds to H, 2 corresponds to W
+    packed_h = int(img_ids[..., 1].max().item() + 1)
+    packed_w = int(img_ids[..., 2].max().item() + 1)
+    
+    # Precompute scales once per denoising step for efficiency and logging
+    scales = compute_sega_rope_scales(
+        img=img,
+        original_seq_len=original_seq_len,
+        packed_h=packed_h,
+        packed_w=packed_w,
+        num_rope_dims=128,
+    )
+    
+    logger.info(
+        f"SEGA (Spectral-Energy Guided Attention) active | Grid: {packed_h}x{packed_w} | "
+        f"RoPE Scale Range: {scales.min().item():.4f} - {scales.max().item():.4f}"
+    )
+    
+    def sega_apply_rotary_emb(x, freqs_cis, **kwargs):
+        # freqs_cis is a tuple of (cos, sin)
+        cos, sin = freqs_cis
+        
+        # Scale positional coordinate frequencies using precomputed scales
+        cos_scaled = cos * scales.view(1, -1)
+        sin_scaled = sin * scales.view(1, -1)
+        
+        return orig_apply_rotary_emb(x, (cos_scaled, sin_scaled), **kwargs)
+        
+    diffusers_embeddings.apply_rotary_emb = sega_apply_rotary_emb
+    try:
+        yield
+    finally:
+        diffusers_embeddings.apply_rotary_emb = orig_apply_rotary_emb
 
 
 def denoise(
@@ -40,6 +146,8 @@ def denoise(
     # Reference image conditioning (multi-reference image editing)
     img_cond_seq: torch.Tensor | None = None,
     img_cond_seq_ids: torch.Tensor | None = None,
+    # SEGA resolution extrapolation
+    sega_enabled: bool = False,
 ) -> torch.Tensor:
     """Denoise latents using a FLUX.2 Klein transformer model.
 
@@ -68,6 +176,7 @@ def denoise(
         scheduler: Optional diffusers scheduler (Euler, Heun, LCM). If None, uses manual Euler.
         mu: Dynamic shifting parameter computed from image resolution. Required when scheduler
             has use_dynamic_shifting=True.
+        sega_enabled: If True, uses Spectral-Energy Guided Attention for resolution extrapolation.
 
     Returns:
         Denoised latent tensor.
@@ -129,38 +238,39 @@ def denoise(
             in_first_order = scheduler.state_in_first_order if is_heun else True
 
             # Run the transformer model (matching diffusers: guidance=guidance, return_dict=False)
-            output = model(
-                hidden_states=img,
-                encoder_hidden_states=txt,
-                timestep=t_vec,
-                img_ids=img_ids,
-                txt_ids=txt_ids,
-                guidance=guidance_vec,
-                return_dict=False,
-            )
-
-            # Extract the sample from the output (return_dict=False returns tuple)
-            pred = output[0] if isinstance(output, tuple) else output
-
-            step_cfg_scale = cfg_scale[min(user_step, len(cfg_scale) - 1)]
-
-            # Apply CFG if scale is not 1.0
-            if not math.isclose(step_cfg_scale, 1.0):
-                if neg_txt is None:
-                    raise ValueError("Negative text conditioning is required when cfg_scale is not 1.0.")
-
-                neg_output = model(
+            with patch_rope_for_sega(img, original_seq_len, img_ids, sega_enabled=sega_enabled):
+                output = model(
                     hidden_states=img,
-                    encoder_hidden_states=neg_txt,
+                    encoder_hidden_states=txt,
                     timestep=t_vec,
                     img_ids=img_ids,
-                    txt_ids=neg_txt_ids if neg_txt_ids is not None else txt_ids,
+                    txt_ids=txt_ids,
                     guidance=guidance_vec,
                     return_dict=False,
                 )
 
-                neg_pred = neg_output[0] if isinstance(neg_output, tuple) else neg_output
-                pred = neg_pred + step_cfg_scale * (pred - neg_pred)
+                # Extract the sample from the output (return_dict=False returns tuple)
+                pred = output[0] if isinstance(output, tuple) else output
+
+                step_cfg_scale = cfg_scale[min(user_step, len(cfg_scale) - 1)]
+
+                # Apply CFG if scale is not 1.0
+                if not math.isclose(step_cfg_scale, 1.0):
+                    if neg_txt is None:
+                        raise ValueError("Negative text conditioning is required when cfg_scale is not 1.0.")
+
+                    neg_output = model(
+                        hidden_states=img,
+                        encoder_hidden_states=neg_txt,
+                        timestep=t_vec,
+                        img_ids=img_ids,
+                        txt_ids=neg_txt_ids if neg_txt_ids is not None else txt_ids,
+                        guidance=guidance_vec,
+                        return_dict=False,
+                    )
+
+                    neg_pred = neg_output[0] if isinstance(neg_output, tuple) else neg_output
+                    pred = neg_pred + step_cfg_scale * (pred - neg_pred)
 
             # Use scheduler.step() for the update
             step_output = scheduler.step(model_output=pred, timestep=timestep, sample=img)
@@ -230,38 +340,39 @@ def denoise(
             t_vec = torch.full((img.shape[0],), t_curr, dtype=img.dtype, device=img.device)
 
             # Run the transformer model (matching diffusers: guidance=guidance, return_dict=False)
-            output = model(
-                hidden_states=img,
-                encoder_hidden_states=txt,
-                timestep=t_vec,
-                img_ids=img_ids,
-                txt_ids=txt_ids,
-                guidance=guidance_vec,
-                return_dict=False,
-            )
-
-            # Extract the sample from the output (return_dict=False returns tuple)
-            pred = output[0] if isinstance(output, tuple) else output
-
-            step_cfg_scale = cfg_scale[step_index]
-
-            # Apply CFG if scale is not 1.0
-            if not math.isclose(step_cfg_scale, 1.0):
-                if neg_txt is None:
-                    raise ValueError("Negative text conditioning is required when cfg_scale is not 1.0.")
-
-                neg_output = model(
+            with patch_rope_for_sega(img, original_seq_len, img_ids, sega_enabled=sega_enabled):
+                output = model(
                     hidden_states=img,
-                    encoder_hidden_states=neg_txt,
+                    encoder_hidden_states=txt,
                     timestep=t_vec,
                     img_ids=img_ids,
-                    txt_ids=neg_txt_ids if neg_txt_ids is not None else txt_ids,
+                    txt_ids=txt_ids,
                     guidance=guidance_vec,
                     return_dict=False,
                 )
 
-                neg_pred = neg_output[0] if isinstance(neg_output, tuple) else neg_output
-                pred = neg_pred + step_cfg_scale * (pred - neg_pred)
+                # Extract the sample from the output (return_dict=False returns tuple)
+                pred = output[0] if isinstance(output, tuple) else output
+
+                step_cfg_scale = cfg_scale[step_index]
+
+                # Apply CFG if scale is not 1.0
+                if not math.isclose(step_cfg_scale, 1.0):
+                    if neg_txt is None:
+                        raise ValueError("Negative text conditioning is required when cfg_scale is not 1.0.")
+
+                    neg_output = model(
+                        hidden_states=img,
+                        encoder_hidden_states=neg_txt,
+                        timestep=t_vec,
+                        img_ids=img_ids,
+                        txt_ids=neg_txt_ids if neg_txt_ids is not None else txt_ids,
+                        guidance=guidance_vec,
+                        return_dict=False,
+                    )
+
+                    neg_pred = neg_output[0] if isinstance(neg_output, tuple) else neg_output
+                    pred = neg_pred + step_cfg_scale * (pred - neg_pred)
 
             # Euler step
             preview_img = img - t_curr * pred
@@ -300,3 +411,4 @@ def denoise(
         img = img[:, :original_seq_len, :]
 
     return img
+

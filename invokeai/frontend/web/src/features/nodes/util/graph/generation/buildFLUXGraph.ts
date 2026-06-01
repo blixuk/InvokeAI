@@ -63,6 +63,13 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
     fluxVAE,
     t5EncoderModel,
     clipEmbedModel,
+    segaEnabled,
+    usePiDDecode,
+    pidDecodeSteps,
+    pidDecodeSharpness,
+    pidDecodeTextEncoder,
+    pidDecodeModelVariant,
+    pidDecodeScale,
   } = params;
 
   // Flux2 (Klein) uses Qwen3 instead of CLIP+T5
@@ -130,8 +137,18 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
 
   // Use appropriate VAE decode node based on model type
   // FLUX.2 Klein uses a 32-channel VAE (AutoencoderKLFlux2)
-  let l2i: Invocation<'flux_vae_decode'> | Invocation<'flux2_vae_decode'>;
-  if (isFlux2) {
+  let l2i: Invocation<'flux_vae_decode'> | Invocation<'flux2_vae_decode'> | Invocation<'pid_decode'>;
+  if (usePiDDecode) {
+    l2i = g.addNode({
+      type: 'pid_decode',
+      id: getPrefixedId('pid_decode'),
+      steps: pidDecodeSteps,
+      sharpness: pidDecodeSharpness,
+      text_encoder: pidDecodeTextEncoder,
+      model_variant: pidDecodeModelVariant,
+      scale: pidDecodeScale,
+    });
+  } else if (isFlux2) {
     l2i = g.addNode({
       type: 'flux2_vae_decode',
       id: getPrefixedId('flux2_vae_decode'),
@@ -182,6 +199,7 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       id: getPrefixedId('flux2_denoise'),
       num_steps: steps,
       scheduler: fluxScheduler,
+      sega_enabled: segaEnabled,
     });
 
     // Klein: Connect Qwen3 encoder outputs
@@ -251,6 +269,7 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       model: Graph.getModelMetadataField(model),
       steps,
       scheduler: fluxScheduler,
+      sega_enabled: segaEnabled,
     };
     if (kleinVaeModel) {
       flux2Metadata.vae = kleinVaeModel;
@@ -583,7 +602,7 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
 
   // TODO: Add FLUX Reduxes to denoise node like we do for ipa
 
-  if (state.adetailer.isEnabled) {
+  if (state.adetailer?.isEnabled) {
     canvasOutput = addADetailer({
       g,
       state,

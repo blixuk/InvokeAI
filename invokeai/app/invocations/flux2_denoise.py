@@ -137,6 +137,11 @@ class Flux2DenoiseInvocation(BaseInvocation):
         description="FLUX.2 VAE model (required for BN statistics).",
         input=Input.Connection,
     )
+    sega_enabled: bool = InputField(
+        default=False,
+        description="Enable Spectral-Energy Guided Attention (SEGA) for resolution extrapolation.",
+        title="SEGA Enabled",
+    )
     kontext_conditioning: FluxKontextConditioningField | list[FluxKontextConditioningField] | None = InputField(
         default=None,
         description="FLUX Kontext conditioning (reference images for multi-reference image editing).",
@@ -507,6 +512,7 @@ class Flux2DenoiseInvocation(BaseInvocation):
                 inpaint_extension=inpaint_extension,
                 img_cond_seq=img_cond_seq,
                 img_cond_seq_ids=img_cond_seq_ids,
+                sega_enabled=self.sega_enabled,
             )
 
         # Apply BN denormalization if BN stats are available

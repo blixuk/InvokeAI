@@ -2249,7 +2249,8 @@
         "imageSize": "Dimensioni immagine",
         "openaiBackground": "OpenAI Sfondo",
         "seedreamWatermark": "Filigrana Seedream",
-        "seedreamOptimizePrompt": "Seedream Ottimizza Prompt"
+        "seedreamOptimizePrompt": "Seedream Ottimizza Prompt",
+        "segaEnabled": "SEGA (Spectral-Energy Guided Attention)"
     },
     "hrf": {
         "metadata": {

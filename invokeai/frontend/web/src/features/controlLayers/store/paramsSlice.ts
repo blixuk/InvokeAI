@@ -115,6 +115,24 @@ const slice = createSlice({
     setOptimizedDenoisingEnabled: (state, action: PayloadAction<boolean>) => {
       state.optimizedDenoisingEnabled = action.payload;
     },
+    usePiDDecodeToggled: (state) => {
+      state.usePiDDecode = !state.usePiDDecode;
+    },
+    setPiDDecodeSteps: (state, action: PayloadAction<number>) => {
+      state.pidDecodeSteps = action.payload;
+    },
+    setPiDDecodeSharpness: (state, action: PayloadAction<number>) => {
+      state.pidDecodeSharpness = action.payload;
+    },
+    setPiDDecodeTextEncoder: (state, action: PayloadAction<'gemma-2-2b-it' | 'gemma-2-2b-it-abliterated'>) => {
+      state.pidDecodeTextEncoder = action.payload;
+    },
+    setPiDDecodeModelVariant: (state, action: PayloadAction<'2k' | '4k'>) => {
+      state.pidDecodeModelVariant = action.payload;
+    },
+    setPiDDecodeScale: (state, action: PayloadAction<number>) => {
+      state.pidDecodeScale = action.payload;
+    },
     setSeamlessXAxis: (state, action: PayloadAction<boolean>) => {
       state.seamlessXAxis = action.payload;
     },
@@ -290,6 +308,9 @@ const slice = createSlice({
     },
     qwenImageShiftChanged: (state, action: PayloadAction<number | null>) => {
       state.qwenImageShift = action.payload;
+    },
+    setSegaEnabled: (state, action: PayloadAction<boolean>) => {
+      state.segaEnabled = action.payload;
     },
     vaePrecisionChanged: (state, action: PayloadAction<ParameterPrecision>) => {
       state.vaePrecision = action.payload;
@@ -642,6 +663,12 @@ export const {
   setSeed,
   setImg2imgStrength,
   setOptimizedDenoisingEnabled,
+  usePiDDecodeToggled,
+  setPiDDecodeSteps,
+  setPiDDecodeSharpness,
+  setPiDDecodeTextEncoder,
+  setPiDDecodeModelVariant,
+  setPiDDecodeScale,
   setSeamlessXAxis,
   setSeamlessYAxis,
   setShouldRandomizeSeed,
@@ -662,6 +689,7 @@ export const {
   qwenImageQwenVLEncoderModelSelected,
   qwenImageQuantizationChanged,
   qwenImageShiftChanged,
+  setSegaEnabled,
   setClipSkip,
   shouldUseCpuNoiseChanged,
   setColorCompensation,
@@ -734,6 +762,12 @@ export const paramsSliceConfig: SliceConfig<typeof slice> = {
         state.qwenImageQwenVLEncoderModel = null;
       }
 
+      if (state._version === 3) {
+        // v3 -> v4, add segaEnabled field
+        state._version = 4;
+        state.segaEnabled = false;
+      }
+
       return zParamsState.parse(state);
     },
   },
@@ -800,6 +834,7 @@ export const selectInfillPatchmatchDownscaleSize = createParamsSelector(
   (params) => params.infillPatchmatchDownscaleSize
 );
 export const selectInfillColorValue = createParamsSelector((params) => params.infillColorValue);
+export const selectSegaEnabled = createParamsSelector((params) => params.segaEnabled);
 export const selectImg2imgStrength = createParamsSelector((params) => params.img2imgStrength);
 export const selectOptimizedDenoisingEnabled = createParamsSelector((params) => params.optimizedDenoisingEnabled);
 export const selectPositivePrompt = createParamsSelector((params) => params.positivePrompt);
@@ -965,6 +1000,12 @@ export const selectGeminiTemperature = createParamsSelector((params) => params.g
 export const selectGeminiThinkingLevel = createParamsSelector((params) => params.geminiThinkingLevel);
 export const selectSeedreamWatermark = createParamsSelector((params) => params.seedreamWatermark);
 export const selectSeedreamOptimizePrompt = createParamsSelector((params) => params.seedreamOptimizePrompt);
+export const selectUsePiDDecode = createParamsSelector((params) => params.usePiDDecode);
+export const selectPiDDecodeSteps = createParamsSelector((params) => params.pidDecodeSteps);
+export const selectPiDDecodeSharpness = createParamsSelector((params) => params.pidDecodeSharpness);
+export const selectPiDDecodeTextEncoder = createParamsSelector((params) => params.pidDecodeTextEncoder);
+export const selectPiDDecodeModelVariant = createParamsSelector((params) => params.pidDecodeModelVariant);
+export const selectPiDDecodeScale = createParamsSelector((params) => params.pidDecodeScale);
 export const selectExternalProviderId = createSelector(selectModelConfig, (modelConfig) => {
   if (modelConfig && isExternalApiModelConfig(modelConfig)) {
     return modelConfig.provider_id;
