@@ -73,6 +73,17 @@ const slice = createSlice({
     pickerCompactViewStateChanged: (state, action: PayloadAction<{ pickerId: string; isCompact: boolean }>) => {
       state.pickerCompactViewStates[action.payload.pickerId] = action.payload.isCompact;
     },
+    addOptionalModule: (state, action: PayloadAction<string>) => {
+      if (!state.activeOptionalModuleIds.includes(action.payload)) {
+        state.activeOptionalModuleIds.push(action.payload);
+      }
+    },
+    removeOptionalModule: (state, action: PayloadAction<string>) => {
+      state.activeOptionalModuleIds = state.activeOptionalModuleIds.filter((id) => id !== action.payload);
+    },
+    resetOptionalModules: (state) => {
+      state.activeOptionalModuleIds = ['adetailer', 'sega', 'pid', 'refiner', 'advanced'];
+    },
   },
 });
 
@@ -87,6 +98,9 @@ export const {
   textAreaSizesStateChanged,
   dockviewStorageKeyChanged,
   pickerCompactViewStateChanged,
+  addOptionalModule,
+  removeOptionalModule,
+  resetOptionalModules,
 } = slice.actions;
 
 export const selectUiSlice = (state: RootState) => state.ui;
@@ -116,6 +130,10 @@ export const uiSliceConfig: SliceConfig<typeof slice> = {
       if (state._version === 4) {
         state.shouldUsePagedGalleryView = false;
         state._version = 5;
+      }
+      if (state._version === 5) {
+        state.activeOptionalModuleIds = ['adetailer', 'sega', 'pid', 'refiner', 'advanced'];
+        state._version = 6;
       }
       return zUIState.parse(state);
     },
