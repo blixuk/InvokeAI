@@ -64,7 +64,7 @@ const OptionalModuleWrapper = memo(({ id, children }: OptionalModuleWrapperProps
         aria-label="Remove module"
         onClick={handleRemove}
         position="absolute"
-        top="10px"
+        top="12px"
         right="42px"
         zIndex={2}
         variant="ghost"
@@ -159,7 +159,7 @@ export const ParametersPanelGenerate = memo(() => {
 
               {/* Add optional module catalog button */}
               {!isExternal && (
-                <Box px={1} pt={2}>
+                <Box w="full" pt={2}>
                   {availableModules.length > 0 ? (
                     <Menu>
                       <MenuButton
