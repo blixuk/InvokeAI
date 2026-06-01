@@ -58,7 +58,16 @@ const OptionalModuleWrapper = memo(({ id, children }: OptionalModuleWrapperProps
   }, [dispatch, id]);
 
   return (
-    <Box position="relative" w="full" role="group">
+    <Box
+      position="relative"
+      w="full"
+      role="group"
+      sx={{
+        '.chakra-accordion__button': {
+          pl: '44px !important',
+        },
+      }}
+    >
       {children}
       <IconButton
         size="xs"
@@ -66,8 +75,9 @@ const OptionalModuleWrapper = memo(({ id, children }: OptionalModuleWrapperProps
         aria-label="Remove module"
         onClick={handleRemove}
         position="absolute"
-        top="12px"
-        right="42px"
+        top="15px"
+        transform="translateY(-50%)"
+        left="12px"
         zIndex={2}
         variant="ghost"
         color="base.400"
