@@ -142,6 +142,13 @@ class Flux2DenoiseInvocation(BaseInvocation):
         description="Enable Spectral-Energy Guided Attention (SEGA) for resolution extrapolation.",
         title="SEGA Enabled",
     )
+    sega_alpha: float = InputField(
+        default=1.0,
+        ge=0.1,
+        le=4.0,
+        description="Alpha base scaling factor for SEGA resolution extrapolation.",
+        title="SEGA Alpha",
+    )
     kontext_conditioning: FluxKontextConditioningField | list[FluxKontextConditioningField] | None = InputField(
         default=None,
         description="FLUX Kontext conditioning (reference images for multi-reference image editing).",
@@ -513,6 +520,7 @@ class Flux2DenoiseInvocation(BaseInvocation):
                 img_cond_seq=img_cond_seq,
                 img_cond_seq_ids=img_cond_seq_ids,
                 sega_enabled=self.sega_enabled,
+                sega_alpha=self.sega_alpha,
             )
 
         # Apply BN denormalization if BN stats are available

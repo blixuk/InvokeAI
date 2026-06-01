@@ -10720,6 +10720,12 @@ export type components = {
              */
             sega_enabled?: boolean;
             /**
+             * SEGA Alpha
+             * @description Alpha base scaling factor for SEGA resolution extrapolation.
+             * @default 1
+             */
+            sega_alpha?: number;
+            /**
              * Reference Images
              * @description FLUX Kontext conditioning (reference images for multi-reference image editing).
              * @default null
@@ -25139,29 +25145,25 @@ export type components = {
              */
             vae?: components["schemas"]["VAEField"] | null;
             /**
+             * Model Variant
+             * @description Which NVIDIA PiD distilled model checkpoint to use: 2K (res2k_sr4x) or 4K (res2kto4k_sr4x).
+             * @default 2k
+             * @enum {string}
+             */
+            model_variant?: "2k" | "4k";
+            /**
+             * Text Encoder
+             * @description Text encoder variant to use for prompt conditioning: standard Gemma 2 or abliterated uncensored Gemma 2.
+             * @default gemma-2-2b-it
+             * @enum {string}
+             */
+            text_encoder?: "gemma-2-2b-it" | "gemma-2-2b-it-abliterated";
+            /**
              * Steps
              * @description Number of conditional pixel-space diffusion denoising steps (1-20).
              * @default 4
              */
             steps?: number;
-            /**
-             * Sharpness
-             * @description Detail enhancement strength/sharpness of the Pixel Diffusion process.
-             * @default 0.8
-             */
-            sharpness?: number;
-            /**
-             * Text Encoder
-             * @description Text encoder variant to use for prompt conditioning: standard Gemma 2 or abliterated uncensored Gemma 2.
-             * @default gemma-2-2b-it
-             */
-            text_encoder?: "gemma-2-2b-it" | "gemma-2-2b-it-abliterated";
-            /**
-             * Model Variant
-             * @description Which NVIDIA PiD distilled model checkpoint to use: 2K (res2k_sr4x) or 4K (res2kto4k_sr4x).
-             * @default 2k
-             */
-            model_variant?: "2k" | "4k";
             /**
              * Scale
              * @description Detail enhancement upscaling factor (default is 4x).

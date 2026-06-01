@@ -80,6 +80,13 @@ Invoke now features a native, fully integrated **Pixel Diffusion Decoder (PiD)**
 - **Smart VRAM Management**: Automatically offloads idle models (e.g. Flux Transformer, Qwen3) to system memory before invoking the PiD process, freeing up over 12 GB of VRAM and avoiding CUDA Out-of-Memory (OOM) errors.
 - **Interactive Sidebar Control Panel**: Supports steps, detail sharpness, resolution variant (2K/4K), and discrete upscale factors (1x, 2x, 4x, 8x).
 
+### Spectral-Energy Guided Attention (SEGA) Integration
+
+Invoke now features a native, fully integrated **Spectral-Energy Guided Attention (SEGA)** implementation:
+- **Resolution Extrapolation for FLUX.2**: Generates high-fidelity images at resolutions far exceeding training size by dynamically modulating the RoPE (Rotary Position Embedding) frequencies using real-time spectral-energy analysis of attention matrices.
+- **Dedicated Sidebar Accordion GUI**: Toggle SEGA on/off and fine-tune the Extrapolation Scale (Alpha) via an elegant parameter slider.
+- **Dynamic RoPE Calibration**: Integrates seamlessly with FLUX.2 Klein 4B and 9B architectures, automatically scaling attention weights for pristine multi-megapixel generation.
+
 ### Templates & Style Presets
 
 A dedicated Templates tab provides a full-page grid to create, edit, organize, and delete prompt templates and style presets. Includes a "Style Reference" toggle to automatically inject template cover images into the generation context via IP-Adapter or Kontext conditioning.

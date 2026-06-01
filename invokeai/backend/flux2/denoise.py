@@ -79,7 +79,7 @@ def compute_sega_rope_scales(
 
 
 @contextmanager
-def patch_rope_for_sega(img: torch.Tensor, original_seq_len: int, img_ids: torch.Tensor, sega_enabled: bool = False):
+def patch_rope_for_sega(img: torch.Tensor, original_seq_len: int, img_ids: torch.Tensor, sega_enabled: bool = False, sega_alpha: float = 1.0):
     if not sega_enabled:
         yield
         return
@@ -98,6 +98,7 @@ def patch_rope_for_sega(img: torch.Tensor, original_seq_len: int, img_ids: torch
         packed_h=packed_h,
         packed_w=packed_w,
         num_rope_dims=128,
+        alpha_base=sega_alpha,
     )
     
     logger.info(
@@ -148,6 +149,7 @@ def denoise(
     img_cond_seq_ids: torch.Tensor | None = None,
     # SEGA resolution extrapolation
     sega_enabled: bool = False,
+    sega_alpha: float = 1.0,
 ) -> torch.Tensor:
     """Denoise latents using a FLUX.2 Klein transformer model.
 
@@ -238,7 +240,7 @@ def denoise(
             in_first_order = scheduler.state_in_first_order if is_heun else True
 
             # Run the transformer model (matching diffusers: guidance=guidance, return_dict=False)
-            with patch_rope_for_sega(img, original_seq_len, img_ids, sega_enabled=sega_enabled):
+            with patch_rope_for_sega(img, original_seq_len, img_ids, sega_enabled=sega_enabled, sega_alpha=sega_alpha):
                 output = model(
                     hidden_states=img,
                     encoder_hidden_states=txt,
@@ -340,7 +342,7 @@ def denoise(
             t_vec = torch.full((img.shape[0],), t_curr, dtype=img.dtype, device=img.device)
 
             # Run the transformer model (matching diffusers: guidance=guidance, return_dict=False)
-            with patch_rope_for_sega(img, original_seq_len, img_ids, sega_enabled=sega_enabled):
+            with patch_rope_for_sega(img, original_seq_len, img_ids, sega_enabled=sega_enabled, sega_alpha=sega_alpha):
                 output = model(
                     hidden_states=img,
                     encoder_hidden_states=txt,

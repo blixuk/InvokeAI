@@ -1992,6 +1992,13 @@
                 "It synthesizes rich, high-frequency details and ultra-sharp edges in just 4 steps, bypassing the standard blurry VAE decoder."
             ]
         },
+        "segaExtrapolation": {
+            "heading": "SEGA Extrapolation",
+            "paragraphs": [
+                "Spectral-Energy Guided Attention (SEGA) performs resolution extrapolation for FLUX.2 models by dynamically scaling RoPE (Rotary Position Embedding) frequencies based on spectral analysis.",
+                "Alpha controls the magnitude of extrapolation intensity. Higher values create stronger extrapolation for larger images."
+            ]
+        },
         "clipSkip": {
             "heading": "CLIP Skip",
             "paragraphs": [

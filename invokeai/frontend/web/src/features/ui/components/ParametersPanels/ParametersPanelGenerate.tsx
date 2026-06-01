@@ -8,6 +8,8 @@ import { ADetailerSettingsAccordion } from 'features/settingsAccordions/componen
 import { AdvancedSettingsAccordion } from 'features/settingsAccordions/components/AdvancedSettingsAccordion/AdvancedSettingsAccordion';
 import { ExternalSettingsAccordion } from 'features/settingsAccordions/components/ExternalSettingsAccordion/ExternalSettingsAccordion';
 import { GenerationSettingsAccordion } from 'features/settingsAccordions/components/GenerationSettingsAccordion/GenerationSettingsAccordion';
+import { SegaSettingsAccordion } from 'features/settingsAccordions/components/SegaSettingsAccordion/SegaSettingsAccordion';
+import { PidSettingsAccordion } from 'features/settingsAccordions/components/PidSettingsAccordion/PidSettingsAccordion';
 import { GenerateTabImageSettingsAccordion } from 'features/settingsAccordions/components/ImageSettingsAccordion/GenerateTabImageSettingsAccordion';
 import { RefinerSettingsAccordion } from 'features/settingsAccordions/components/RefinerSettingsAccordion/RefinerSettingsAccordion';
 import { StylePresetMenu } from 'features/stylePresets/components/StylePresetMenu';
@@ -45,6 +47,8 @@ export const ParametersPanelGenerate = memo(() => {
               <Prompts />
               <GenerateTabImageSettingsAccordion />
               <GenerationSettingsAccordion />
+              <SegaSettingsAccordion />
+              <PidSettingsAccordion />
               <ADetailerSettingsAccordion />
               {isSDXL && <RefinerSettingsAccordion />}
               {!isCogview4 && !isExternal && <AdvancedSettingsAccordion />}

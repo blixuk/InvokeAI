@@ -79,6 +79,7 @@ export type Feature =
   | 'fluxDevLicense'
   | 'cpuOnly'
   | 'usePiDDecode'
+  | 'segaExtrapolation'
   | 'fp8Storage';
 
 export type PopoverData = PopoverProps & {
@@ -236,6 +237,9 @@ export const POPOVER_DATA: { [key in Feature]?: PopoverData } = {
     href: 'https://support.invoke.ai/support/solutions/articles/151000178161-advanced-settings',
   },
   usePiDDecode: {
+    placement: 'right',
+  },
+  segaExtrapolation: {
     placement: 'right',
   },
 } as const;

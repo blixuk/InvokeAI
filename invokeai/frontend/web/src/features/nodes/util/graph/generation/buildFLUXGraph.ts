@@ -64,6 +64,7 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
     t5EncoderModel,
     clipEmbedModel,
     segaEnabled,
+    segaAlpha,
     usePiDDecode,
     pidDecodeSteps,
     pidDecodeSharpness,
@@ -200,6 +201,7 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       num_steps: steps,
       scheduler: fluxScheduler,
       sega_enabled: segaEnabled,
+      sega_alpha: segaAlpha,
     });
 
     // Klein: Connect Qwen3 encoder outputs
@@ -270,6 +272,7 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       steps,
       scheduler: fluxScheduler,
       sega_enabled: segaEnabled,
+      sega_alpha: segaAlpha,
     };
     if (kleinVaeModel) {
       flux2Metadata.vae = kleinVaeModel;

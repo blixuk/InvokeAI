@@ -312,6 +312,9 @@ const slice = createSlice({
     setSegaEnabled: (state, action: PayloadAction<boolean>) => {
       state.segaEnabled = action.payload;
     },
+    setSegaAlpha: (state, action: PayloadAction<number>) => {
+      state.segaAlpha = action.payload;
+    },
     vaePrecisionChanged: (state, action: PayloadAction<ParameterPrecision>) => {
       state.vaePrecision = action.payload;
     },
@@ -690,6 +693,7 @@ export const {
   qwenImageQuantizationChanged,
   qwenImageShiftChanged,
   setSegaEnabled,
+  setSegaAlpha,
   setClipSkip,
   shouldUseCpuNoiseChanged,
   setColorCompensation,
@@ -768,6 +772,12 @@ export const paramsSliceConfig: SliceConfig<typeof slice> = {
         state.segaEnabled = false;
       }
 
+      if (state._version === 4) {
+        // v4 -> v5, add segaAlpha field
+        state._version = 5;
+        state.segaAlpha = 1.0;
+      }
+
       return zParamsState.parse(state);
     },
   },
@@ -835,6 +845,7 @@ export const selectInfillPatchmatchDownscaleSize = createParamsSelector(
 );
 export const selectInfillColorValue = createParamsSelector((params) => params.infillColorValue);
 export const selectSegaEnabled = createParamsSelector((params) => params.segaEnabled);
+export const selectSegaAlpha = createParamsSelector((params) => params.segaAlpha);
 export const selectImg2imgStrength = createParamsSelector((params) => params.img2imgStrength);
 export const selectOptimizedDenoisingEnabled = createParamsSelector((params) => params.optimizedDenoisingEnabled);
 export const selectPositivePrompt = createParamsSelector((params) => params.positivePrompt);
