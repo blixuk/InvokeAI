@@ -72,6 +72,14 @@ Invoke now features a native, fully integrated **Detailer** accordion directly i
 - **Dedicated Prompt Overrides**: Enter detailed prompt overrides (e.g., specific hair styles, eye color, skin textures) for the crop regions, or let it fall back seamlessly to the main prompt when empty.
 - **Custom Detector Checkpoints**: Install and classify any third-party YOLO/face/hand/person detection checkpoint under the new `Detailer Detector` model type (supports both ONNX and Checkpoint formats), and dynamically select them in the GUI dropdown.
 
+### Pixel Diffusion Decoder (PiD) Integration
+
+Invoke now features a native, fully integrated **Pixel Diffusion Decoder (PiD)** implementation under Advanced Settings:
+- **High-Fidelity Latent Decoding**: Replaces standard VAE decoders with a conditional pixel-space diffusion model to unify decoding and upsampling in a single generative pass.
+- **Support for Uncensored/Abliterated Gemma 2**: Choose dynamically between standard Gemma 2 and our custom abliterated (`gemma-2-2b-it-abliterated`) text encoder for censorship-free generations.
+- **Smart VRAM Management**: Automatically offloads idle models (e.g. Flux Transformer, Qwen3) to system memory before invoking the PiD process, freeing up over 12 GB of VRAM and avoiding CUDA Out-of-Memory (OOM) errors.
+- **Interactive Sidebar Control Panel**: Supports steps, detail sharpness, resolution variant (2K/4K), and discrete upscale factors (1x, 2x, 4x, 8x).
+
 ### Templates & Style Presets
 
 A dedicated Templates tab provides a full-page grid to create, edit, organize, and delete prompt templates and style presets. Includes a "Style Reference" toggle to automatically inject template cover images into the generation context via IP-Adapter or Kontext conditioning.
