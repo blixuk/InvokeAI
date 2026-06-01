@@ -27,6 +27,8 @@ import { SegaSettingsAccordion } from 'features/settingsAccordions/components/Se
 import { PidSettingsAccordion } from 'features/settingsAccordions/components/PidSettingsAccordion/PidSettingsAccordion';
 import { GenerateTabImageSettingsAccordion } from 'features/settingsAccordions/components/ImageSettingsAccordion/GenerateTabImageSettingsAccordion';
 import { RefinerSettingsAccordion } from 'features/settingsAccordions/components/RefinerSettingsAccordion/RefinerSettingsAccordion';
+import { UpscaleSettingsAccordion } from 'features/settingsAccordions/components/UpscaleSettingsAccordion/UpscaleSettingsAccordion';
+import { SeedVarianceSettingsAccordion } from 'features/settingsAccordions/components/SeedVarianceSettingsAccordion/SeedVarianceSettingsAccordion';
 import { StylePresetMenu } from 'features/stylePresets/components/StylePresetMenu';
 import { StylePresetMenuTrigger } from 'features/stylePresets/components/StylePresetMenuTrigger';
 import { $isStylePresetsMenuOpen } from 'features/stylePresets/store/stylePresetSlice';
@@ -98,6 +100,8 @@ export const ParametersPanelGenerate = memo(() => {
     { id: 'adetailer', label: 'Detailer (ADetailer)', isCompatible: true },
     { id: 'sega', label: 'Spectral Energy Attention (SEGA)', isCompatible: isFlux2 },
     { id: 'pid', label: 'Pixel Diffusion Decoder (PiD)', isCompatible: isFLUX || isFlux2 },
+    { id: 'upscale', label: 'Super-Resolution Upscaling', isCompatible: true },
+    { id: 'seed_variance', label: 'Seed Variation (Slerp)', isCompatible: true },
     { id: 'refiner', label: 'Refiner Settings (SDXL)', isCompatible: isSDXL },
     { id: 'advanced', label: 'Advanced Options', isCompatible: !isCogview4 },
   ], [isFlux2, isFLUX, isSDXL, isCogview4]);
@@ -134,6 +138,18 @@ export const ParametersPanelGenerate = memo(() => {
               {activeOptionalModuleIds.includes('pid') && (
                 <OptionalModuleWrapper id="pid">
                   <PidSettingsAccordion />
+                </OptionalModuleWrapper>
+              )}
+
+              {activeOptionalModuleIds.includes('upscale') && (
+                <OptionalModuleWrapper id="upscale">
+                  <UpscaleSettingsAccordion />
+                </OptionalModuleWrapper>
+              )}
+
+              {activeOptionalModuleIds.includes('seed_variance') && (
+                <OptionalModuleWrapper id="seed_variance">
+                  <SeedVarianceSettingsAccordion />
                 </OptionalModuleWrapper>
               )}
 
