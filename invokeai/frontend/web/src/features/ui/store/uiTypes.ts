@@ -13,7 +13,7 @@ const zSerializable = z.any().refine(isPlainObject);
 export type Serializable = z.infer<typeof zSerializable>;
 
 export const zUIState = z.object({
-  _version: z.literal(6),
+  _version: z.literal(7),
   activeTab: zTabName,
   shouldShowItemDetails: z.boolean(),
   shouldShowProgressInViewer: z.boolean(),
@@ -28,7 +28,7 @@ export const zUIState = z.object({
 });
 export type UIState = z.infer<typeof zUIState>;
 export const getInitialUIState = (): UIState => ({
-  _version: 6 as const,
+  _version: 7 as const,
   activeTab: 'generate' as const,
   shouldShowItemDetails: false,
   shouldShowProgressInViewer: true,
@@ -39,5 +39,5 @@ export const getInitialUIState = (): UIState => ({
   panels: {},
   shouldShowNotificationV2: true,
   pickerCompactViewStates: {},
-  activeOptionalModuleIds: ['adetailer', 'sega', 'pid', 'refiner', 'advanced'],
+  activeOptionalModuleIds: [],
 });

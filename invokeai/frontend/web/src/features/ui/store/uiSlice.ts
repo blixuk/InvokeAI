@@ -135,6 +135,10 @@ export const uiSliceConfig: SliceConfig<typeof slice> = {
         state.activeOptionalModuleIds = ['adetailer', 'sega', 'pid', 'refiner', 'advanced'];
         state._version = 6;
       }
+      if (state._version === 6) {
+        state.activeOptionalModuleIds = [];
+        state._version = 7;
+      }
       return zUIState.parse(state);
     },
     persistDenylist: ['shouldShowItemDetails'],
