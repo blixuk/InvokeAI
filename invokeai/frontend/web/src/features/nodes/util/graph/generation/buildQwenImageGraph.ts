@@ -244,6 +244,13 @@ export const buildQwenImageGraph = async (arg: GraphBuilderArg): Promise<GraphBu
   const mrFlowEnabled = state.params.mrFlowEnabled;
 
   if (generationMode === 'txt2img') {
+    canvasOutput = addTextToImage({
+      g,
+      state,
+      denoise,
+      l2i,
+    });
+
     if (mrFlowEnabled) {
       const { highResDenoise, highResL2i } = addMrFlow({
         g,
@@ -253,19 +260,13 @@ export const buildQwenImageGraph = async (arg: GraphBuilderArg): Promise<GraphBu
         l2i,
         isQwenImage: true,
       });
-      canvasOutput = addTextToImage({
-        g,
-        state,
-        denoise: highResDenoise,
-        l2i: highResL2i,
-      });
-    } else {
-      canvasOutput = addTextToImage({
-        g,
-        state,
-        denoise,
-        l2i,
-      });
+
+      if (canvasOutput.id.includes('resize_image_to_original_size')) {
+        g.deleteEdge(l2i.id, 'image', canvasOutput.id, 'image');
+        g.addEdge(highResL2i, 'image', canvasOutput, 'image');
+      } else {
+        canvasOutput = highResL2i;
+      }
     }
     g.upsertMetadata({ generation_mode: 'qwen_image_txt2img' });
   } else if (generationMode === 'img2img') {

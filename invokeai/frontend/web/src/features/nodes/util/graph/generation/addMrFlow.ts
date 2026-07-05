@@ -31,7 +31,8 @@ export const addMrFlow = ({
   const highResSteps = selectMrFlowHighResSteps(state);
   const sigma = selectMrFlowSigma(state);
 
-  const { width, height } = state.params.dimensions;
+  const width = (denoise as any).width ?? state.params.dimensions.width;
+  const height = (denoise as any).height ?? state.params.dimensions.height;
   
   denoise.width = roundDownToMultiple(width / 2, 16);
   denoise.height = roundDownToMultiple(height / 2, 16);
@@ -87,6 +88,8 @@ export const addMrFlow = ({
   const highResDenoise = g.addNode({
     ...denoise,
     id: getPrefixedId('mrflow_high_res_denoise'),
+    width: (denoise as any).width * 2,
+    height: (denoise as any).height * 2,
     denoising_start: sigma,
     denoising_end: 1.0,
     add_noise: true,

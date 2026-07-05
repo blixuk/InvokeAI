@@ -367,6 +367,13 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
     }
 
     if (generationMode === 'txt2img') {
+      canvasOutput = addTextToImage({
+        g,
+        state,
+        denoise: flux2Denoise,
+        l2i: flux2L2i,
+      });
+
       if (mrFlowEnabled) {
         const { highResDenoise, highResL2i } = addMrFlow({
           g,
@@ -376,19 +383,13 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
           l2i: flux2L2i,
           isFlux2: true,
         });
-        canvasOutput = addTextToImage({
-          g,
-          state,
-          denoise: highResDenoise,
-          l2i: highResL2i,
-        });
-      } else {
-        canvasOutput = addTextToImage({
-          g,
-          state,
-          denoise: flux2Denoise,
-          l2i: flux2L2i,
-        });
+
+        if (canvasOutput.id.includes('resize_image_to_original_size')) {
+          g.deleteEdge(flux2L2i.id, 'image', canvasOutput.id, 'image');
+          g.addEdge(highResL2i, 'image', canvasOutput, 'image');
+        } else {
+          canvasOutput = highResL2i;
+        }
       }
       g.upsertMetadata({ generation_mode: 'flux2_txt2img' });
     } else if (generationMode === 'img2img') {
