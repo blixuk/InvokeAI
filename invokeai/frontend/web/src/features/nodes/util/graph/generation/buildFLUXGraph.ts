@@ -385,7 +385,7 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
         });
 
         if (canvasOutput.id.includes('resize_image_to_original_size')) {
-          g.deleteEdge(flux2L2i.id, 'image', canvasOutput.id, 'image');
+          g.deleteEdgesTo(canvasOutput, ['image']);
           g.addEdge(highResL2i, 'image', canvasOutput, 'image');
         } else {
           canvasOutput = highResL2i;

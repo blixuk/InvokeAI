@@ -199,7 +199,22 @@ class Config_Base(ABC, BaseModel):
                 else:
                     raise ValueError("CLIP Embed model config dict must include a 'variant' field")
 
-            return ".".join(tag_strings)
+
+            # Special case: PiD VAE models need the is_pid tag to distinguish them.
+            if (
+                type_ == ModelType.VAE.value
+                and format_ == ModelFormat.Checkpoint.value
+                and (base_ == BaseModelType.Flux.value or base_ == BaseModelType.Flux2.value)
+            ):
+                if v.get("is_pid") is True:
+                    tag_strings.append("pid")
+
+            tag = ".".join(tag_strings)
+            from invokeai.backend.model_manager.configs.unknown import Unknown_Config
+            known_tags = {c.get_tag().tag for c in Config_Base.CONFIG_CLASSES if c is not Unknown_Config}
+            if tag not in known_tags:
+                return Unknown_Config.get_tag().tag
+            return tag
         else:
             raise ValueError(
                 "Model config discriminator value must be computed from a dict or ModelConfigBase instance"
