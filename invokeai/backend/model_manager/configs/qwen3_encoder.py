@@ -24,7 +24,7 @@ def _has_qwen3_keys(state_dict: dict[str | int, Any]) -> bool:
     - GGUF/llama.cpp format: blk.0., token_embd.weight
     """
     # PyTorch/diffusers format indicators
-    pytorch_indicators = ["model.layers.0.", "model.embed_tokens.weight"]
+    pytorch_indicators = ["model.layers.0.", "model.embed_tokens.weight", "language_model.layers.0.", "language_model.embed_tokens.weight"]
     # GGUF/llama.cpp format indicators
     gguf_indicators = ["blk.0.", "token_embd.weight"]
 
@@ -66,7 +66,7 @@ def _get_qwen3_variant_from_state_dict(state_dict: dict[str | int, Any]) -> Opti
     embed_key = None
     for key in state_dict.keys():
         if isinstance(key, str):
-            if key == "model.embed_tokens.weight" or key == "token_embd.weight":
+            if key == "model.embed_tokens.weight" or key == "token_embd.weight" or key == "language_model.embed_tokens.weight":
                 embed_key = key
                 break
 
@@ -80,7 +80,12 @@ def _get_qwen3_variant_from_state_dict(state_dict: dict[str | int, Any]) -> Opti
     if isinstance(tensor, GGMLTensor):
         # GGUF tensor
         if hasattr(tensor, "shape") and len(tensor.shape) >= 2:
-            hidden_size = tensor.shape[1]
+            # GGUF weights can be transposed compared to PyTorch, so check both dimensions
+            # to see if one matches the expected hidden sizes.
+            if tensor.shape[0] in [QWEN3_06B_HIDDEN_SIZE, QWEN3_4B_HIDDEN_SIZE, QWEN3_8B_HIDDEN_SIZE]:
+                hidden_size = tensor.shape[0]
+            else:
+                hidden_size = tensor.shape[1]
         else:
             return None
     elif hasattr(tensor, "shape"):
@@ -107,11 +112,11 @@ def _get_qwen3_variant_from_state_dict(state_dict: dict[str | int, Any]) -> Opti
 class Qwen3Encoder_Checkpoint_Config(Checkpoint_Config_Base, Config_Base):
     """Configuration for single-file Qwen3 Encoder models (safetensors)."""
 
-    base: Literal[BaseModelType.Any] = Field(default=BaseModelType.Any)
+    base: Literal[BaseModelType.Any, BaseModelType.Ideogram] = Field(default=BaseModelType.Any)
     type: Literal[ModelType.Qwen3Encoder] = Field(default=ModelType.Qwen3Encoder)
     format: Literal[ModelFormat.Checkpoint] = Field(default=ModelFormat.Checkpoint)
     cpu_only: bool | None = Field(default=None, description="Whether this model should run on CPU only")
-    variant: Qwen3VariantType = Field(description="Qwen3 model size variant (4B or 8B)")
+    variant: Optional[Qwen3VariantType] = Field(default=Qwen3VariantType.Qwen3_4B, description="Qwen3 model size variant (4B or 8B)")
 
     @classmethod
     def from_model_on_disk(cls, mod: ModelOnDisk, override_fields: dict[str, Any]) -> Self:
@@ -155,11 +160,11 @@ class Qwen3Encoder_Qwen3Encoder_Config(Config_Base):
     compatible with Qwen2VLForConditionalGeneration or similar architectures used by Z-Image.
     """
 
-    base: Literal[BaseModelType.Any] = Field(default=BaseModelType.Any)
+    base: Literal[BaseModelType.Any, BaseModelType.Ideogram] = Field(default=BaseModelType.Any)
     type: Literal[ModelType.Qwen3Encoder] = Field(default=ModelType.Qwen3Encoder)
     format: Literal[ModelFormat.Qwen3Encoder] = Field(default=ModelFormat.Qwen3Encoder)
     cpu_only: bool | None = Field(default=None, description="Whether this model should run on CPU only")
-    variant: Qwen3VariantType = Field(description="Qwen3 model size variant (4B or 8B)")
+    variant: Optional[Qwen3VariantType] = Field(default=Qwen3VariantType.Qwen3_4B, description="Qwen3 model size variant (4B or 8B)")
 
     @classmethod
     def from_model_on_disk(cls, mod: ModelOnDisk, override_fields: dict[str, Any]) -> Self:
@@ -242,11 +247,11 @@ class Qwen3Encoder_Qwen3Encoder_Config(Config_Base):
 class Qwen3Encoder_GGUF_Config(Checkpoint_Config_Base, Config_Base):
     """Configuration for GGUF-quantized Qwen3 Encoder models."""
 
-    base: Literal[BaseModelType.Any] = Field(default=BaseModelType.Any)
+    base: Literal[BaseModelType.Any, BaseModelType.Ideogram] = Field(default=BaseModelType.Any)
     type: Literal[ModelType.Qwen3Encoder] = Field(default=ModelType.Qwen3Encoder)
     format: Literal[ModelFormat.GGUFQuantized] = Field(default=ModelFormat.GGUFQuantized)
     cpu_only: bool | None = Field(default=None, description="Whether this model should run on CPU only")
-    variant: Qwen3VariantType = Field(description="Qwen3 model size variant (4B or 8B)")
+    variant: Optional[Qwen3VariantType] = Field(default=Qwen3VariantType.Qwen3_4B, description="Qwen3 model size variant (4B or 8B)")
 
     @classmethod
     def from_model_on_disk(cls, mod: ModelOnDisk, override_fields: dict[str, Any]) -> Self:
