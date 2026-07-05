@@ -6,6 +6,7 @@ import { useAppSelector } from 'app/store/storeHooks';
 import { selectLoRAsSlice } from 'features/controlLayers/store/lorasSlice';
 import {
   selectFluxDypePreset,
+  selectFluxEnableKVCache,
   selectIsAnima,
   selectIsCogView4,
   selectIsExternal,
@@ -23,7 +24,11 @@ import ParamAnimaScheduler from 'features/parameters/components/Core/ParamAnimaS
 import ParamCFGScale from 'features/parameters/components/Core/ParamCFGScale';
 import ParamFluxDypeExponent from 'features/parameters/components/Core/ParamFluxDypeExponent';
 import ParamFluxDypePreset from 'features/parameters/components/Core/ParamFluxDypePreset';
+import { ParamMrFlow } from 'features/parameters/components/Advanced/ParamMrFlow';
 import ParamFluxDypeScale from 'features/parameters/components/Core/ParamFluxDypeScale';
+import ParamFluxKVCacheEnable from 'features/parameters/components/Core/ParamFluxKVCacheEnable';
+import ParamFluxKVCachePrecision from 'features/parameters/components/Core/ParamFluxKVCachePrecision';
+import ParamFluxKVCacheStorage from 'features/parameters/components/Core/ParamFluxKVCacheStorage';
 import ParamFluxScheduler from 'features/parameters/components/Core/ParamFluxScheduler';
 import ParamGuidance from 'features/parameters/components/Core/ParamGuidance';
 import ParamQwenImageShift from 'features/parameters/components/Core/ParamQwenImageShift';
@@ -56,6 +61,7 @@ export const GenerationSettingsAccordion = memo(() => {
   const isQwenImage = useAppSelector(selectIsQwenImage);
   const isAnima = useAppSelector(selectIsAnima);
   const fluxDypePreset = useAppSelector(selectFluxDypePreset);
+  const fluxEnableKVCache = useAppSelector(selectFluxEnableKVCache);
   const modelSupportsGuidance = useAppSelector(selectModelSupportsGuidance);
   const modelSupportsSteps = useAppSelector(selectModelSupportsSteps);
   const hasExpanderContent = isExternal ? modelSupportsGuidance || modelSupportsSteps : true;
@@ -110,15 +116,19 @@ export const GenerationSettingsAccordion = memo(() => {
                 {!isExternal && isAnima && <ParamAnimaScheduler />}
                 {modelSupportsSteps && <ParamSteps />}
                 {isExternal && modelSupportsGuidance && <ParamGuidance />}
-                {!isExternal && isFLUX && modelConfig && !isFluxFillMainModelModelConfig(modelConfig) && (
+                {!isExternal && (isFLUX || isFlux2) && modelConfig && !isFluxFillMainModelModelConfig(modelConfig) && (
                   <ParamGuidance />
                 )}
                 {!isExternal && !isFLUX && !isFlux2 && <ParamCFGScale />}
                 {!isExternal && isZImage && <ParamZImageShift />}
                 {!isExternal && isQwenImage && <ParamQwenImageShift />}
-                {!isExternal && isFLUX && <ParamFluxDypePreset />}
-                {!isExternal && isFLUX && fluxDypePreset === 'manual' && <ParamFluxDypeScale />}
-                {!isExternal && isFLUX && fluxDypePreset === 'manual' && <ParamFluxDypeExponent />}
+                {!isExternal && (isFLUX || isFlux2) && <ParamFluxDypePreset />}
+                {!isExternal && (isFLUX || isFlux2) && fluxDypePreset === 'manual' && <ParamFluxDypeScale />}
+                {!isExternal && (isFLUX || isFlux2) && fluxDypePreset === 'manual' && <ParamFluxDypeExponent />}
+                {!isExternal && (isFLUX || isFlux2) && <ParamFluxKVCacheEnable />}
+                {!isExternal && (isFLUX || isFlux2) && fluxEnableKVCache && <ParamFluxKVCachePrecision />}
+                {!isExternal && (isFLUX || isFlux2) && fluxEnableKVCache && <ParamFluxKVCacheStorage />}
+                {!isExternal && (isFLUX || isFlux2 || isQwenImage) && <ParamMrFlow />}
               </FormControlGroup>
               {!isExternal && isZImage && <ParamZImageSeedVarianceSettings />}
             </Flex>

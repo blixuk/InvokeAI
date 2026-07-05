@@ -80,7 +80,11 @@ export type Feature =
   | 'cpuOnly'
   | 'usePiDDecode'
   | 'segaExtrapolation'
-  | 'fp8Storage';
+  | 'fp8Storage'
+  | 'fluxEnableKVCache'
+  | 'fluxKVCachePrecision'
+  | 'fluxKVCacheStorage'
+  | 'mrFlow';
 
 export type PopoverData = PopoverProps & {
   image?: string;

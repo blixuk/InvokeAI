@@ -32,6 +32,8 @@ import type {
   ParameterCLIPLEmbedModel,
   ParameterControlLoRAModel,
   ParameterFluxDypePreset,
+  ParameterFluxKVCachePrecision,
+  ParameterFluxKVCacheStorage,
   ParameterGuidance,
   ParameterModel,
   ParameterNegativePrompt,
@@ -53,6 +55,15 @@ const slice = createSlice({
   name: 'params',
   initialState: getInitialParamsState(),
   reducers: {
+    setSeedResizeEnabled: (state, action: PayloadAction<boolean>) => {
+      state.seedResizeEnabled = action.payload;
+    },
+    setSeedResizeWidth: (state, action: PayloadAction<number>) => {
+      state.seedResizeWidth = action.payload;
+    },
+    setSeedResizeHeight: (state, action: PayloadAction<number>) => {
+      state.seedResizeHeight = action.payload;
+    },
     setIterations: (state, action: PayloadAction<number>) => {
       state.iterations = action.payload;
     },
@@ -86,6 +97,15 @@ const slice = createSlice({
     setFluxDypeExponent: (state, action: PayloadAction<number>) => {
       state.fluxDypeExponent = action.payload;
     },
+    setFluxEnableKVCache: (state, action: PayloadAction<boolean>) => {
+      state.fluxEnableKVCache = action.payload;
+    },
+    setFluxKVCachePrecision: (state, action: PayloadAction<ParameterFluxKVCachePrecision>) => {
+      state.fluxKVCachePrecision = action.payload;
+    },
+    setFluxKVCacheStorage: (state, action: PayloadAction<ParameterFluxKVCacheStorage>) => {
+      state.fluxKVCacheStorage = action.payload;
+    },
     setZImageScheduler: (state, action: PayloadAction<'euler' | 'heun' | 'lcm'>) => {
       state.zImageScheduler = action.payload;
     },
@@ -115,8 +135,20 @@ const slice = createSlice({
     setOptimizedDenoisingEnabled: (state, action: PayloadAction<boolean>) => {
       state.optimizedDenoisingEnabled = action.payload;
     },
-    usePiDDecodeToggled: (state) => {
+    piDDecodeToggled: (state) => {
       state.usePiDDecode = !state.usePiDDecode;
+    },
+    mrFlowToggled: (state) => {
+      state.mrFlowEnabled = !state.mrFlowEnabled;
+    },
+    setMrFlowLowResSteps: (state, action: PayloadAction<number>) => {
+      state.mrFlowLowResSteps = action.payload;
+    },
+    setMrFlowHighResSteps: (state, action: PayloadAction<number>) => {
+      state.mrFlowHighResSteps = action.payload;
+    },
+    setMrFlowSigma: (state, action: PayloadAction<number>) => {
+      state.mrFlowSigma = action.payload;
     },
     setPiDDecodeSteps: (state, action: PayloadAction<number>) => {
       state.pidDecodeSteps = action.payload;
@@ -132,6 +164,20 @@ const slice = createSlice({
     },
     setPiDDecodeScale: (state, action: PayloadAction<number>) => {
       state.pidDecodeScale = action.payload;
+    },
+    pidModelSelected: (state, action: PayloadAction<ParameterVAEModel | null>) => {
+      const result = zParamsState.shape.pidModel.safeParse(action.payload);
+      if (!result.success) {
+        return;
+      }
+      state.pidModel = result.data;
+    },
+    pidTextEncoderSelected: (state, action: PayloadAction<{ key: string; name: string; base: string } | null>) => {
+      const result = zParamsState.shape.pidTextEncoder.safeParse(action.payload);
+      if (!result.success) {
+        return;
+      }
+      state.pidTextEncoder = result.data;
     },
     setSeamlessXAxis: (state, action: PayloadAction<boolean>) => {
       state.seamlessXAxis = action.payload;
@@ -553,6 +599,12 @@ const slice = createSlice({
     seedreamOptimizePromptChanged: (state, action: PayloadAction<boolean>) => {
       state.seedreamOptimizePrompt = action.payload;
     },
+    ideogramNumInferenceStepsChanged: (state, action: PayloadAction<number>) => {
+      state.ideogramNumInferenceSteps = action.payload;
+    },
+    ideogramMagicPromptChanged: (state, action: PayloadAction<boolean>) => {
+      state.ideogramMagicPrompt = action.payload;
+    },
     resolutionPresetSelected: (
       state,
       action: PayloadAction<{ imageSize: string; aspectRatio: string; width: number; height: number }>
@@ -629,20 +681,32 @@ const resetState = (state: ParamsState): ParamsState => {
   newState.animaT5EncoderModel = oldState.animaT5EncoderModel;
   newState.kleinVaeModel = oldState.kleinVaeModel;
   newState.kleinQwen3EncoderModel = oldState.kleinQwen3EncoderModel;
+  newState.pidModel = oldState.pidModel;
+  newState.pidTextEncoder = oldState.pidTextEncoder;
   newState.qwenImageComponentSource = oldState.qwenImageComponentSource;
   newState.qwenImageVaeModel = oldState.qwenImageVaeModel;
   newState.qwenImageQwenVLEncoderModel = oldState.qwenImageQwenVLEncoderModel;
   newState.qwenImageQuantization = oldState.qwenImageQuantization;
   newState.qwenImageShift = oldState.qwenImageShift;
+  newState.seedResizeEnabled = oldState.seedResizeEnabled;
+  newState.seedResizeWidth = oldState.seedResizeWidth;
+  newState.seedResizeHeight = oldState.seedResizeHeight;
   return newState;
 };
 
 export const {
+  mrFlowToggled,
+  setMrFlowLowResSteps,
+  setMrFlowHighResSteps,
+  setMrFlowSigma,
   setInfillMethod,
   setInfillTileSize,
   setInfillPatchmatchDownscaleSize,
   setInfillColorValue,
   setMaskBlur,
+  setSeedResizeEnabled,
+  setSeedResizeWidth,
+  setSeedResizeHeight,
   setCanvasCoherenceMode,
   setCanvasCoherenceEdgeSize,
   setCanvasCoherenceMinDenoise,
@@ -656,6 +720,9 @@ export const {
   setFluxDypePreset,
   setFluxDypeScale,
   setFluxDypeExponent,
+  setFluxEnableKVCache,
+  setFluxKVCachePrecision,
+  setFluxKVCacheStorage,
   setZImageScheduler,
   setZImageShift,
   setZImageSeedVarianceEnabled,
@@ -666,7 +733,7 @@ export const {
   setSeed,
   setImg2imgStrength,
   setOptimizedDenoisingEnabled,
-  usePiDDecodeToggled,
+  piDDecodeToggled,
   setPiDDecodeSteps,
   setPiDDecodeSharpness,
   setPiDDecodeTextEncoder,
@@ -687,6 +754,8 @@ export const {
   zImageQwen3SourceModelSelected,
   kleinVaeModelSelected,
   kleinQwen3EncoderModelSelected,
+  pidModelSelected,
+  pidTextEncoderSelected,
   qwenImageComponentSourceSelected,
   qwenImageVaeModelSelected,
   qwenImageQwenVLEncoderModelSelected,
@@ -731,6 +800,8 @@ export const {
   geminiThinkingLevelChanged,
   seedreamWatermarkChanged,
   seedreamOptimizePromptChanged,
+  ideogramNumInferenceStepsChanged,
+  ideogramMagicPromptChanged,
   paramsRecalled,
   animaVaeModelSelected,
   animaQwen3EncoderModelSelected,
@@ -778,6 +849,22 @@ export const paramsSliceConfig: SliceConfig<typeof slice> = {
         state.segaAlpha = 1.0;
       }
 
+      if (state._version === 5) {
+        // v5 -> v6, add seed resizing parameters
+        state._version = 6;
+        state.seedResizeEnabled = false;
+        state.seedResizeWidth = 512;
+        state.seedResizeHeight = 512;
+      }
+
+      if (state._version === 6) {
+        // v6 -> v7, add flux kv cache parameters
+        state._version = 7;
+        state.fluxEnableKVCache = false;
+        state.fluxKVCachePrecision = 'auto';
+        state.fluxKVCacheStorage = 'auto';
+      }
+
       return zParamsState.parse(state);
     },
   },
@@ -788,6 +875,8 @@ const createParamsSelector = <T>(selector: Selector<ParamsState, T>) => createSe
 
 export const selectBase = createParamsSelector((params) => params.model?.base);
 export const selectIsSDXL = createParamsSelector((params) => params.model?.base === 'sdxl');
+export const selectIsSD1 = createParamsSelector((params) => params.model?.base === 'sd-1');
+export const selectIsSD2 = createParamsSelector((params) => params.model?.base === 'sd-2');
 export const selectIsFLUX = createParamsSelector((params) => params.model?.base === 'flux');
 export const selectIsSD3 = createParamsSelector((params) => params.model?.base === 'sd-3');
 export const selectIsCogView4 = createParamsSelector((params) => params.model?.base === 'cogview4');
@@ -941,6 +1030,9 @@ export const selectFluxScheduler = createParamsSelector((params) => params.fluxS
 export const selectFluxDypePreset = createParamsSelector((params) => params.fluxDypePreset);
 export const selectFluxDypeScale = createParamsSelector((params) => params.fluxDypeScale);
 export const selectFluxDypeExponent = createParamsSelector((params) => params.fluxDypeExponent);
+export const selectFluxEnableKVCache = createParamsSelector((params) => params.fluxEnableKVCache);
+export const selectFluxKVCachePrecision = createParamsSelector((params) => params.fluxKVCachePrecision);
+export const selectFluxKVCacheStorage = createParamsSelector((params) => params.fluxKVCacheStorage);
 export const selectZImageScheduler = createParamsSelector((params) => params.zImageScheduler);
 export const selectZImageShift = createParamsSelector((params) => params.zImageShift);
 export const selectZImageSeedVarianceEnabled = createParamsSelector((params) => params.zImageSeedVarianceEnabled);
@@ -948,6 +1040,9 @@ export const selectZImageSeedVarianceStrength = createParamsSelector((params) =>
 export const selectZImageSeedVarianceRandomizePercent = createParamsSelector(
   (params) => params.zImageSeedVarianceRandomizePercent
 );
+export const selectSeedResizeEnabled = createParamsSelector((params) => params.seedResizeEnabled);
+export const selectSeedResizeWidth = createParamsSelector((params) => params.seedResizeWidth);
+export const selectSeedResizeHeight = createParamsSelector((params) => params.seedResizeHeight);
 export const selectSeamlessXAxis = createParamsSelector((params) => params.seamlessXAxis);
 export const selectSeamlessYAxis = createParamsSelector((params) => params.seamlessYAxis);
 export const selectSeed = createParamsSelector((params) => params.seed);
@@ -1011,12 +1106,22 @@ export const selectGeminiTemperature = createParamsSelector((params) => params.g
 export const selectGeminiThinkingLevel = createParamsSelector((params) => params.geminiThinkingLevel);
 export const selectSeedreamWatermark = createParamsSelector((params) => params.seedreamWatermark);
 export const selectSeedreamOptimizePrompt = createParamsSelector((params) => params.seedreamOptimizePrompt);
+export const selectIdeogramNumInferenceSteps = createParamsSelector((params) => params.ideogramNumInferenceSteps);
+export const selectIdeogramMagicPrompt = createParamsSelector((params) => params.ideogramMagicPrompt);
 export const selectUsePiDDecode = createParamsSelector((params) => params.usePiDDecode);
 export const selectPiDDecodeSteps = createParamsSelector((params) => params.pidDecodeSteps);
 export const selectPiDDecodeSharpness = createParamsSelector((params) => params.pidDecodeSharpness);
 export const selectPiDDecodeTextEncoder = createParamsSelector((params) => params.pidDecodeTextEncoder);
 export const selectPiDDecodeModelVariant = createParamsSelector((params) => params.pidDecodeModelVariant);
 export const selectPiDDecodeScale = createParamsSelector((params) => params.pidDecodeScale);
+export const selectPiDModel = createParamsSelector((params) => params.pidModel);
+export const selectPiDTextEncoder = createParamsSelector((params) => params.pidTextEncoder);
+
+export const selectMrFlowEnabled = createParamsSelector((params) => params.mrFlowEnabled);
+export const selectMrFlowLowResSteps = createParamsSelector((params) => params.mrFlowLowResSteps);
+export const selectMrFlowHighResSteps = createParamsSelector((params) => params.mrFlowHighResSteps);
+export const selectMrFlowSigma = createParamsSelector((params) => params.mrFlowSigma);
+
 export const selectExternalProviderId = createSelector(selectModelConfig, (modelConfig) => {
   if (modelConfig && isExternalApiModelConfig(modelConfig)) {
     return modelConfig.provider_id;

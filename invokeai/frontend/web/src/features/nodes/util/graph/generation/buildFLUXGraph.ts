@@ -5,6 +5,8 @@ import {
   selectKleinVaeModel,
   selectMainModelConfig,
   selectParamsSlice,
+  selectPiDModel,
+  selectPiDTextEncoder,
 } from 'features/controlLayers/store/paramsSlice';
 import { selectRefImagesSlice } from 'features/controlLayers/store/refImagesSlice';
 import { selectCanvasMetadata, selectCanvasSlice } from 'features/controlLayers/store/selectors';
@@ -19,6 +21,7 @@ import { addFLUXLoRAs } from 'features/nodes/util/graph/generation/addFLUXLoRAs'
 import { addFLUXReduxes } from 'features/nodes/util/graph/generation/addFLUXRedux';
 import { addImageToImage } from 'features/nodes/util/graph/generation/addImageToImage';
 import { addInpaint } from 'features/nodes/util/graph/generation/addInpaint';
+import { addMrFlow } from 'features/nodes/util/graph/generation/addMrFlow';
 import { addNSFWChecker } from 'features/nodes/util/graph/generation/addNSFWChecker';
 import { addOutpaint } from 'features/nodes/util/graph/generation/addOutpaint';
 import { addRegions } from 'features/nodes/util/graph/generation/addRegions';
@@ -67,17 +70,23 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
     segaAlpha,
     usePiDDecode,
     pidDecodeSteps,
-    pidDecodeSharpness,
+    pidDecodeSharpness: _pidDecodeSharpness,
     pidDecodeTextEncoder,
     pidDecodeModelVariant,
     pidDecodeScale,
+    fluxEnableKVCache,
+    fluxKVCachePrecision,
+    fluxKVCacheStorage,
   } = params;
 
   // Flux2 (Klein) uses Qwen3 instead of CLIP+T5
   // VAE and Qwen3 encoder can be extracted from the main Diffusers model or selected separately
   const isFlux2 = model.base === 'flux2';
+  const mrFlowEnabled = state.params.mrFlowEnabled;
   const kleinVaeModel = selectKleinVaeModel(state);
   const kleinQwen3EncoderModel = selectKleinQwen3EncoderModel(state);
+  const pidModel = selectPiDModel(state);
+  const pidTextEncoder = selectPiDTextEncoder(state);
 
   if (!isFlux2) {
     assert(t5EncoderModel, 'No T5 Encoder model found in state');
@@ -144,10 +153,11 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       type: 'pid_decode',
       id: getPrefixedId('pid_decode'),
       steps: pidDecodeSteps,
-      sharpness: pidDecodeSharpness,
       text_encoder: pidDecodeTextEncoder,
       model_variant: pidDecodeModelVariant,
       scale: pidDecodeScale,
+      pid_model: pidModel ? { vae: pidModel } : undefined,
+      pid_text_encoder: pidTextEncoder ?? undefined,
     });
   } else if (isFlux2) {
     l2i = g.addNode({
@@ -230,6 +240,15 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       id: getPrefixedId('flux_text_encoder'),
     });
 
+    // Find the first enabled reference image config with an image to use as the KV Cache reference
+    const firstEnabledRefImage = refImages.entities
+      .filter((entity) => entity.isEnabled)
+      .map((entity) => entity.config)
+      .find((config) => config.image !== null);
+    const kvCacheImage = firstEnabledRefImage?.image
+      ? zImageField.parse(firstEnabledRefImage.image.crop?.image ?? firstEnabledRefImage.image.original.image)
+      : undefined;
+
     denoise = g.addNode({
       type: 'flux_denoise',
       id: getPrefixedId('flux_denoise'),
@@ -240,6 +259,10 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       // Only send custom scale/exponent when DyPE is not off
       dype_scale: fluxDypeScale,
       dype_exponent: fluxDypeExponent,
+      enable_kv_cache: fluxEnableKVCache,
+      kv_cache_precision: fluxKVCachePrecision,
+      kv_cache_storage: fluxKVCacheStorage,
+      ref_image: kvCacheImage,
     });
 
     posCondCollect = g.addNode({
@@ -293,6 +316,9 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       vae: fluxVAE,
       t5_encoder: t5EncoderModel,
       clip_embed_model: clipEmbedModel,
+      enable_kv_cache: fluxEnableKVCache,
+      kv_cache_precision: fluxKVCachePrecision,
+      kv_cache_storage: fluxKVCacheStorage,
     });
   }
   g.addEdgeToMetadata(seed, 'value', 'seed');
@@ -341,12 +367,29 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
     }
 
     if (generationMode === 'txt2img') {
-      canvasOutput = addTextToImage({
-        g,
-        state,
-        denoise: flux2Denoise,
-        l2i: flux2L2i,
-      });
+      if (mrFlowEnabled) {
+        const { highResDenoise, highResL2i } = addMrFlow({
+          g,
+          state,
+          denoise: flux2Denoise,
+          modelLoader: flux2ModelLoader,
+          l2i: flux2L2i,
+          isFlux2: true,
+        });
+        canvasOutput = addTextToImage({
+          g,
+          state,
+          denoise: highResDenoise,
+          l2i: highResL2i,
+        });
+      } else {
+        canvasOutput = addTextToImage({
+          g,
+          state,
+          denoise: flux2Denoise,
+          l2i: flux2L2i,
+        });
+      }
       g.upsertMetadata({ generation_mode: 'flux2_txt2img' });
     } else if (generationMode === 'img2img') {
       assert(manager !== null);
@@ -453,12 +496,29 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
         denoise: fluxDenoise,
       });
     } else if (generationMode === 'txt2img') {
-      canvasOutput = addTextToImage({
-        g,
-        state,
-        denoise: fluxDenoise,
-        l2i: fluxL2i,
-      });
+      if (mrFlowEnabled) {
+        const { highResDenoise, highResL2i } = addMrFlow({
+          g,
+          state,
+          denoise: fluxDenoise,
+          modelLoader: fluxModelLoader,
+          l2i: fluxL2i,
+          isFlux2: false,
+        });
+        canvasOutput = addTextToImage({
+          g,
+          state,
+          denoise: highResDenoise,
+          l2i: highResL2i,
+        });
+      } else {
+        canvasOutput = addTextToImage({
+          g,
+          state,
+          denoise: fluxDenoise,
+          l2i: fluxL2i,
+        });
+      }
       g.upsertMetadata({ generation_mode: 'flux_txt2img' });
     } else if (generationMode === 'img2img') {
       assert(manager !== null);

@@ -9,6 +9,7 @@ import { fetchModelConfigWithTypeGuard } from 'features/metadata/util/modelFetch
 import { zImageField } from 'features/nodes/types/common';
 import { addImageToImage } from 'features/nodes/util/graph/generation/addImageToImage';
 import { addInpaint } from 'features/nodes/util/graph/generation/addInpaint';
+import { addMrFlow } from 'features/nodes/util/graph/generation/addMrFlow';
 import { addNSFWChecker } from 'features/nodes/util/graph/generation/addNSFWChecker';
 import { addOutpaint } from 'features/nodes/util/graph/generation/addOutpaint';
 import { addQwenImageLoRAs } from 'features/nodes/util/graph/generation/addQwenImageLoRAs';
@@ -240,13 +241,32 @@ export const buildQwenImageGraph = async (arg: GraphBuilderArg): Promise<GraphBu
 
   let canvasOutput: Invocation<ImageOutputNodes> = l2i;
 
+  const mrFlowEnabled = state.params.mrFlowEnabled;
+
   if (generationMode === 'txt2img') {
-    canvasOutput = addTextToImage({
-      g,
-      state,
-      denoise,
-      l2i,
-    });
+    if (mrFlowEnabled) {
+      const { highResDenoise, highResL2i } = addMrFlow({
+        g,
+        state,
+        denoise,
+        modelLoader,
+        l2i,
+        isQwenImage: true,
+      });
+      canvasOutput = addTextToImage({
+        g,
+        state,
+        denoise: highResDenoise,
+        l2i: highResL2i,
+      });
+    } else {
+      canvasOutput = addTextToImage({
+        g,
+        state,
+        denoise,
+        l2i,
+      });
+    }
     g.upsertMetadata({ generation_mode: 'qwen_image_txt2img' });
   } else if (generationMode === 'img2img') {
     assert(manager !== null);
