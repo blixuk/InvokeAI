@@ -96,6 +96,7 @@
     "react-textarea-autosize": "^8.5.9",
     "react-use": "^17.6.0",
     "react-virtuoso": "^4.13.0",
+    "react-zoom-pan-pinch": "^4.0.3",
     "redux-remember": "^5.2.0",
     "redux-undo": "^1.1.0",
     "remark-gfm": "^4.0.1",

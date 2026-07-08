@@ -4,9 +4,11 @@ import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
 import { useDisclosure } from 'common/hooks/useBoolean';
 import { BoardsListWrapper } from 'features/gallery/components/Boards/BoardsList/BoardsListWrapper';
 import { BoardsSearch } from 'features/gallery/components/Boards/BoardsList/BoardsSearch';
+import { TagsList } from 'features/gallery/components/Boards/BoardsList/TagsList';
 import { BoardsSettingsPopover } from 'features/gallery/components/Boards/BoardsSettingsPopover';
 import { selectBoardSearchText } from 'features/gallery/store/gallerySelectors';
 import { boardSearchTextChanged } from 'features/gallery/store/gallerySlice';
+import { HorizontalResizeHandle } from 'features/ui/components/tabs/ResizeHandle';
 import { useAutoLayoutContext } from 'features/ui/layouts/auto-layout-context';
 import {
   BOARD_PANEL_DEFAULT_HEIGHT_PX,
@@ -16,9 +18,11 @@ import {
 } from 'features/ui/layouts/shared';
 import { useCollapsibleGridviewPanel } from 'features/ui/layouts/use-collapsible-gridview-panel';
 import type { CSSProperties } from 'react';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PiCaretDownBold, PiCaretUpBold, PiMagnifyingGlassBold } from 'react-icons/pi';
+import type { ImperativePanelHandle } from 'react-resizable-panels';
+import { Panel, PanelGroup } from 'react-resizable-panels';
 
 const COLLAPSE_STYLES: CSSProperties = { flexShrink: 0, minHeight: 0 };
 
@@ -47,6 +51,27 @@ export const BoardsPanel = memo(() => {
     }
     searchDisclosure.toggle();
   }, [boardSearchText.length, searchDisclosure, collapsibleApi, dispatch]);
+
+  const tagsPanelRef = useRef<ImperativePanelHandle>(null);
+  const [isTagsOpen, setIsTagsOpen] = useState(true);
+
+  const toggleTags = useCallback(() => {
+    if (tagsPanelRef.current) {
+      if (tagsPanelRef.current.isCollapsed()) {
+        tagsPanelRef.current.expand();
+      } else {
+        tagsPanelRef.current.collapse();
+      }
+    }
+  }, []);
+
+  const onTagsCollapse = useCallback(() => {
+    setIsTagsOpen(false);
+  }, []);
+
+  const onTagsExpand = useCallback(() => {
+    setIsTagsOpen(true);
+  }, []);
 
   return (
     <Flex flexDir="column" w="full" h="full">
@@ -81,7 +106,25 @@ export const BoardsPanel = memo(() => {
         </Box>
       </Collapse>
       <Divider pt={2} />
-      <BoardsListWrapper />
+      <Box flex={1} w="full" position="relative" minH={0}>
+        <PanelGroup direction="vertical">
+          <Panel id="boards-list" defaultSize={70} minSize={20}>
+            <BoardsListWrapper />
+          </Panel>
+          <HorizontalResizeHandle />
+          <Panel
+            id="tags-list"
+            ref={tagsPanelRef}
+            defaultSize={30}
+            minSize={10}
+            collapsible={true}
+            onCollapse={onTagsCollapse}
+            onExpand={onTagsExpand}
+          >
+            <TagsList isOpen={isTagsOpen} onToggle={toggleTags} />
+          </Panel>
+        </PanelGroup>
+      </Box>
     </Flex>
   );
 });
