@@ -41,9 +41,26 @@ class Krea2ImageGenerationInvocation(BaseInvocation, WithMetadata, WithBoard):
         from diffusers.models.transformers.transformer_krea2 import Krea2Transformer2DModel
         
         if isinstance(model_obj, dict):
-            if not self.base_model:
-                raise ValueError("A base_model must be provided when using a GGUF UNet model.")
-            pipeline = context.models.load(self.base_model).model
+            base_model_id = self.base_model
+            if not base_model_id:
+                from invokeai.backend.model_manager.taxonomy import BaseModelType, ModelType, ModelFormat
+                models = context.services.model_manager.store.search_by_attr(
+                    base_model=BaseModelType.Krea2,
+                    model_type=ModelType.Main,
+                )
+                valid_models = [m for m in models if m.format == ModelFormat.Checkpoint]
+                if not valid_models:
+                    raise ValueError("A Krea 2 base model (safetensors) must be installed to use a GGUF UNet model. Please install a base model or use the Node Editor to wire one.")
+                
+                base_model_id = ModelIdentifierField(
+                    key=valid_models[0].key,
+                    hash=valid_models[0].hash,
+                    name=valid_models[0].name,
+                    base=valid_models[0].base,
+                    type=valid_models[0].type,
+                )
+
+            pipeline = context.models.load(base_model_id).model
             if not isinstance(pipeline, Krea2Pipeline):
                 raise TypeError(f"base_model must be a Krea2Pipeline, got {type(pipeline).__name__}")
             pipeline.transformer.load_state_dict(model_obj, assign=True)
