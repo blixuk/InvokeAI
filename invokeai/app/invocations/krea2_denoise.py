@@ -1,4 +1,5 @@
 import torch
+from typing import Optional
 
 from invokeai.app.invocations.baseinvocation import BaseInvocation, Classification, invocation
 from invokeai.app.invocations.fields import FieldDescriptions, Input, InputField, WithBoard, WithMetadata
