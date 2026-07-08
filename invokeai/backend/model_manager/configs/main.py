@@ -1476,6 +1476,8 @@ class Main_Checkpoint_Krea2_GGUF_Config(Checkpoint_Config_Base, Main_Config_Base
         raise_for_override_fields(cls, override_fields)
         if mod.path.suffix != ".gguf":
             raise NotAMatchError("File is not a GGUF model")
+        if "krea" not in mod.path.name.lower():
+            raise NotAMatchError("Filename does not indicate a Krea 2 model")
         variant = override_fields.pop("variant", None) or ModelVariantType.Normal
         return cls(**override_fields, variant=variant)
 
@@ -1509,5 +1511,7 @@ class Main_Checkpoint_DreamLite_GGUF_Config(Checkpoint_Config_Base, Main_Config_
         raise_for_override_fields(cls, override_fields)
         if mod.path.suffix != ".gguf":
             raise NotAMatchError("File is not a GGUF model")
+        if "dreamlite" not in mod.path.name.lower():
+            raise NotAMatchError("Filename does not indicate a DreamLite model")
         variant = override_fields.pop("variant", None) or ModelVariantType.Normal
         return cls(**override_fields, variant=variant)

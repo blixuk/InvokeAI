@@ -57,8 +57,13 @@ class DreamLiteCheckpointModel(ModelLoader):
             from diffusers.pipelines.dreamlite.pipeline_dreamlite import DreamLitePipeline
         except ImportError as e:
             raise RuntimeError(f"DreamLitePipeline could not be imported: {e}")
+            
+        if isinstance(config, Main_Checkpoint_DreamLite_GGUF_Config):
+            from invokeai.backend.quantization.gguf.loaders import gguf_sd_loader
+            sd = gguf_sd_loader(model_path, compute_dtype=dtype)
+            return sd
         
-        # Load the pipeline from single file natively using diffusers
+        # Load the pipeline from single file natively using diffusers (for Safetensors)
         pipeline = DreamLitePipeline.from_single_file(
             model_path.as_posix(),
             torch_dtype=dtype,

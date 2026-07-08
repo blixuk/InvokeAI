@@ -56,8 +56,13 @@ class Krea2CheckpointModel(ModelLoader):
             from diffusers.pipelines.krea2.pipeline_krea2 import Krea2Pipeline
         except ImportError as e:
             raise RuntimeError(f"Krea2Pipeline could not be imported: {e}")
+            
+        if isinstance(config, Main_Checkpoint_Krea2_GGUF_Config):
+            from invokeai.backend.quantization.gguf.loaders import gguf_sd_loader
+            sd = gguf_sd_loader(model_path, compute_dtype=dtype)
+            return sd
         
-        # Load the pipeline from single file natively using diffusers
+        # Load the pipeline from single file natively using diffusers (for Safetensors)
         pipeline = Krea2Pipeline.from_single_file(
             model_path.as_posix(),
             torch_dtype=dtype,
