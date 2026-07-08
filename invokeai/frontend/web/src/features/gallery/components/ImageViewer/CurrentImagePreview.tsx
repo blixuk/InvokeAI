@@ -17,6 +17,7 @@ import {
 import type { AnimationProps } from 'framer-motion';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { TransformComponent } from 'react-zoom-pan-pinch';
 import type { ImageDTO } from 'services/api/types';
 
 import { useImageViewerContext } from './context';
@@ -145,20 +146,22 @@ export const CurrentImagePreview = memo(({ imageDTO }: { imageDTO: ImageDTO | nu
       justifyContent="center"
       position="relative"
     >
-      {imageToRender && (
-        <Flex w="full" h="full" position="absolute" alignItems="center" justifyContent="center">
-          <DndImage imageDTO={imageToRender} onLoad={onLoadImage} borderRadius="base" />
-        </Flex>
-      )}
-      {!imageToRender && <NoContentForViewer />}
-      {withProgress && (
-        <Flex w="full" h="full" position="absolute" alignItems="center" justifyContent="center" bg="base.900">
-          <ProgressImage progressImage={progressImage} />
-          {progressEvent && (
-            <ProgressIndicator progressEvent={progressEvent} position="absolute" top={6} right={6} size={8} />
-          )}
-        </Flex>
-      )}
+      <TransformComponent wrapperStyle={{ width: '100%', height: '100%', position: 'absolute' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {imageToRender && (
+          <Flex w="full" h="full" position="absolute" alignItems="center" justifyContent="center">
+            <DndImage imageDTO={imageToRender} onLoad={onLoadImage} borderRadius="base" />
+          </Flex>
+        )}
+        {!imageToRender && <NoContentForViewer />}
+        {withProgress && (
+          <Flex w="full" h="full" position="absolute" alignItems="center" justifyContent="center" bg="base.900">
+            <ProgressImage progressImage={progressImage} />
+            {progressEvent && (
+              <ProgressIndicator progressEvent={progressEvent} position="absolute" top={6} right={6} size={8} />
+            )}
+          </Flex>
+        )}
+      </TransformComponent>
       <Flex flexDir="column" gap={2} position="absolute" top={0} insetInlineStart={0} alignItems="flex-start">
         <CanvasAlertsInvocationProgress />
       </Flex>

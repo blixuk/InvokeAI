@@ -6,6 +6,7 @@ import { CurrentImagePreview } from 'features/gallery/components/ImageViewer/Cur
 import { selectLastSelectedItem } from 'features/gallery/store/gallerySelectors';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TransformWrapper } from 'react-zoom-pan-pinch';
 import { useImageDTO } from 'services/api/endpoints/images';
 
 import { ImageViewerToolbar } from './ImageViewerToolbar';
@@ -18,18 +19,28 @@ export const ImageViewer = memo(() => {
   const lastSelectedItem = useAppSelector(selectLastSelectedItem);
   const lastSelectedImageDTO = useImageDTO(lastSelectedItem ?? null);
   return (
-    <Flex flexDir="column" w="full" h="full" overflow="hidden" gap={2} position="relative">
-      <ImageViewerToolbar />
-      <Divider />
-      <Flex w="full" h="full" position="relative">
-        <CurrentImagePreview imageDTO={lastSelectedImageDTO} />
-        <DndDropTarget
-          dndTarget={setComparisonImageDndTarget}
-          dndTargetData={dndTargetData}
-          label={t('gallery.selectForCompare')}
-        />
+    <TransformWrapper
+      smooth={false}
+      wheel={{ step: 0.1 }}
+      panning={{ allowMiddleClickPan: true, allowLeftClickPan: false }}
+      minScale={0.1}
+      maxScale={20}
+      initialScale={1}
+      centerOnInit
+    >
+      <Flex flexDir="column" w="full" h="full" overflow="hidden" gap={2} position="relative">
+        <ImageViewerToolbar />
+        <Divider />
+        <Flex w="full" h="full" position="relative">
+          <CurrentImagePreview imageDTO={lastSelectedImageDTO} />
+          <DndDropTarget
+            dndTarget={setComparisonImageDndTarget}
+            dndTargetData={dndTargetData}
+            label={t('gallery.selectForCompare')}
+          />
+        </Flex>
       </Flex>
-    </Flex>
+    </TransformWrapper>
   );
 });
 
