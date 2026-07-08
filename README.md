@@ -99,6 +99,10 @@ Streamlined downloading of models directly from CivitAI. Supports authenticated 
 
 Invoke features an organized gallery system for easily storing, accessing, and remixing your content in the Invoke workspace. Images can be dragged/dropped onto any Image-base UI element in the application, and rich metadata within the Image allows for easy recall of key prompts or settings used in your workflow.
 
+- **Resizable & Collapsible Panels**: Fully customizable workspace layout with resizable side panels and collapsible board/tag lists.
+- **Interactive Image Viewer**: The main image viewer supports smooth mouse-wheel zooming, middle-click panning, and dedicated zoom controls while preserving core drag-and-drop mechanics.
+- **Asset Management**: Dedicated viewing options and layouts for managing generated images, uploaded assets, and all media components in one place.
+
 ### Model Support
 - SD 1.5
 - SD 2.0
@@ -116,12 +120,15 @@ Invoke features an organized gallery system for easily storing, accessing, and r
 - Flux.2 Klein 9B
 - Z-Image Turbo
 - Z-Image Base
+- DreamLite
+- Krea 2
 - Anima
 - Qwen Image
 - Qwen Image Edit
 - Nano Banana (API Only)
 - GPT Image (API Only)
 - Wan (API Only)
+- Ideogram 4 (API Only)
 
 ### Other features
 
