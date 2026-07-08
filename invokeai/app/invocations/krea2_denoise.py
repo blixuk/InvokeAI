@@ -40,13 +40,13 @@ class Krea2ImageGenerationInvocation(BaseInvocation, WithMetadata, WithBoard):
         from diffusers.pipelines.krea2.pipeline_krea2 import Krea2Pipeline
         from diffusers.models.transformers.transformer_krea2 import Krea2Transformer2DModel
         
-        if isinstance(model_obj, Krea2Transformer2DModel):
+        if isinstance(model_obj, dict):
             if not self.base_model:
                 raise ValueError("A base_model must be provided when using a GGUF UNet model.")
             pipeline = context.models.load(self.base_model).model
             if not isinstance(pipeline, Krea2Pipeline):
                 raise TypeError(f"base_model must be a Krea2Pipeline, got {type(pipeline).__name__}")
-            pipeline.transformer = model_obj
+            pipeline.transformer.load_state_dict(model_obj, assign=True)
         else:
             pipeline = model_obj
         

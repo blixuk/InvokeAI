@@ -40,13 +40,13 @@ class DreamLiteImageGenerationInvocation(BaseInvocation, WithMetadata, WithBoard
         from diffusers.pipelines.dreamlite.pipeline_dreamlite import DreamLitePipeline
         from diffusers.models.unets.unet_dreamlite import DreamLiteUNetModel
         
-        if isinstance(model_obj, DreamLiteUNetModel):
+        if isinstance(model_obj, dict):
             if not self.base_model:
                 raise ValueError("A base_model must be provided when using a GGUF UNet model.")
             pipeline = context.models.load(self.base_model).model
             if not isinstance(pipeline, DreamLitePipeline):
                 raise TypeError(f"base_model must be a DreamLitePipeline, got {type(pipeline).__name__}")
-            pipeline.unet = model_obj
+            pipeline.unet.load_state_dict(model_obj, assign=True)
         else:
             pipeline = model_obj
         
