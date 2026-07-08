@@ -25,6 +25,7 @@ from invokeai.backend.model_manager.taxonomy import (
     BaseModelType,
     Flux2VariantType,
     FluxVariantType,
+    IdeogramVariantType,
     ModelFormat,
     ModelType,
     ModelVariantType,
@@ -63,7 +64,7 @@ class MainModelDefaultSettings(BaseModel):
     def from_base(
         cls,
         base: BaseModelType,
-        variant: Flux2VariantType | FluxVariantType | ModelVariantType | ZImageVariantType | None = None,
+        variant: Flux2VariantType | FluxVariantType | ModelVariantType | ZImageVariantType | IdeogramVariantType | None = None,
     ) -> Self | None:
         match base:
             case BaseModelType.StableDiffusion1:
@@ -93,6 +94,13 @@ class MainModelDefaultSettings(BaseModel):
                     return cls(steps=4, cfg_scale=1.0, width=1024, height=1024)
             case BaseModelType.QwenImage:
                 return cls(steps=40, cfg_scale=4.0, width=1024, height=1024)
+            case BaseModelType.Ideogram:
+                return cls(steps=50, cfg_scale=4.0, width=1024, height=1024)
+            case BaseModelType.Krea2:
+                # Krea2 default settings (TDM version typically uses 8-10 steps)
+                return cls(steps=10, cfg_scale=1.5, width=1024, height=1024)
+            case BaseModelType.DreamLite:
+                return cls(steps=25, cfg_scale=3.5, width=1024, height=1024)
             case _:
                 # TODO(psyche): Do we want defaults for other base types?
                 return None
@@ -134,6 +142,8 @@ def _has_main_keys(state_dict: dict[str | int, Any]) -> bool:
                 # Some FLUX checkpoint files contain transformer keys prefixed with "model.diffusion_model".
                 # This prefix is typically used to distinguish between multiple models bundled in a single file.
                 "model.diffusion_model.double_blocks.",
+                "embed_image_indicator.",
+                "adaln_proj.",
             )
         ):
             return True
@@ -1408,3 +1418,96 @@ class Main_Checkpoint_Anima_Config(Checkpoint_Config_Base, Main_Config_Base, Con
         has_anima_keys = _has_anima_keys(mod.load_state_dict())
         if not has_anima_keys:
             raise NotAMatchError("state dict does not look like an Anima model")
+
+
+class Main_Checkpoint_Ideogram_Config(Checkpoint_Config_Base, Main_Config_Base, Config_Base):
+    """Model config for Ideogram single-file checkpoint models (safetensors)."""
+
+    base: Literal[BaseModelType.Ideogram] = Field(default=BaseModelType.Ideogram)
+    format: Literal[ModelFormat.Checkpoint] = Field(default=ModelFormat.Checkpoint)
+    variant: IdeogramVariantType = Field()
+
+    @classmethod
+    def from_model_on_disk(cls, mod: ModelOnDisk, override_fields: dict[str, Any]) -> Self:
+        raise_if_not_file(mod)
+
+        raise_for_override_fields(cls, override_fields)
+
+        cls._validate_looks_like_ideogram_model(mod)
+
+        variant = override_fields.pop("variant", None) or IdeogramVariantType.V4
+
+        return cls(**override_fields, variant=variant)
+
+    @classmethod
+    def _validate_looks_like_ideogram_model(cls, mod: ModelOnDisk) -> None:
+        state_dict = mod.load_state_dict()
+        if "embed_image_indicator.weight" not in state_dict and "adaln_proj.weight" not in state_dict:
+            raise NotAMatchError("state dict does not look like an Ideogram model")
+
+
+class Main_Checkpoint_Krea2_Config(Checkpoint_Config_Base, Main_Config_Base, Config_Base):
+    """Model config for Krea 2 single-file checkpoint models (safetensors)."""
+
+    base: Literal[BaseModelType.Krea2] = Field(default=BaseModelType.Krea2)
+    format: Literal[ModelFormat.Checkpoint] = Field(default=ModelFormat.Checkpoint)
+    variant: ModelVariantType = Field()
+
+    @classmethod
+    def from_model_on_disk(cls, mod: ModelOnDisk, override_fields: dict[str, Any]) -> Self:
+        raise_if_not_file(mod)
+        raise_for_override_fields(cls, override_fields)
+        if mod.path.suffix not in [".safetensors", ".ckpt", ".pt", ".pth"]:
+            raise NotAMatchError("File is not a checkpoint model")
+        variant = override_fields.pop("variant", None) or ModelVariantType.Normal
+        return cls(**override_fields, variant=variant)
+
+
+class Main_Checkpoint_Krea2_GGUF_Config(Checkpoint_Config_Base, Main_Config_Base, Config_Base):
+    """Model config for Krea 2 GGUF models."""
+
+    base: Literal[BaseModelType.Krea2] = Field(default=BaseModelType.Krea2)
+    format: Literal[ModelFormat.GGUFQuantized] = Field(default=ModelFormat.GGUFQuantized)
+    variant: ModelVariantType = Field()
+
+    @classmethod
+    def from_model_on_disk(cls, mod: ModelOnDisk, override_fields: dict[str, Any]) -> Self:
+        raise_if_not_file(mod)
+        raise_for_override_fields(cls, override_fields)
+        if mod.path.suffix != ".gguf":
+            raise NotAMatchError("File is not a GGUF model")
+        variant = override_fields.pop("variant", None) or ModelVariantType.Normal
+        return cls(**override_fields, variant=variant)
+
+
+class Main_Checkpoint_DreamLite_Config(Checkpoint_Config_Base, Main_Config_Base, Config_Base):
+    """Model config for DreamLite single-file checkpoint models (safetensors)."""
+
+    base: Literal[BaseModelType.DreamLite] = Field(default=BaseModelType.DreamLite)
+    format: Literal[ModelFormat.Checkpoint] = Field(default=ModelFormat.Checkpoint)
+    variant: ModelVariantType = Field()
+
+    @classmethod
+    def from_model_on_disk(cls, mod: ModelOnDisk, override_fields: dict[str, Any]) -> Self:
+        raise_if_not_file(mod)
+        raise_for_override_fields(cls, override_fields)
+        if mod.path.suffix not in [".safetensors", ".ckpt", ".pt", ".pth"]:
+            raise NotAMatchError("File is not a checkpoint model")
+        variant = override_fields.pop("variant", None) or ModelVariantType.Normal
+        return cls(**override_fields, variant=variant)
+
+class Main_Checkpoint_DreamLite_GGUF_Config(Checkpoint_Config_Base, Main_Config_Base, Config_Base):
+    """Model config for DreamLite GGUF models."""
+
+    base: Literal[BaseModelType.DreamLite] = Field(default=BaseModelType.DreamLite)
+    format: Literal[ModelFormat.GGUFQuantized] = Field(default=ModelFormat.GGUFQuantized)
+    variant: ModelVariantType = Field()
+
+    @classmethod
+    def from_model_on_disk(cls, mod: ModelOnDisk, override_fields: dict[str, Any]) -> Self:
+        raise_if_not_file(mod)
+        raise_for_override_fields(cls, override_fields)
+        if mod.path.suffix != ".gguf":
+            raise NotAMatchError("File is not a GGUF model")
+        variant = override_fields.pop("variant", None) or ModelVariantType.Normal
+        return cls(**override_fields, variant=variant)
