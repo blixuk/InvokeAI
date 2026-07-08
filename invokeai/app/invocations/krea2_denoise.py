@@ -6,6 +6,7 @@ from invokeai.app.invocations.fields import FieldDescriptions, Input, InputField
 from invokeai.app.invocations.model import ModelIdentifierField
 from invokeai.app.invocations.primitives import ImageOutput
 from invokeai.app.services.shared.invocation_context import InvocationContext
+from invokeai.backend.util.devices import TorchDevice
 
 
 @invocation(
@@ -49,7 +50,7 @@ class Krea2ImageGenerationInvocation(BaseInvocation, WithMetadata, WithBoard):
         else:
             pipeline = model_obj
         
-        device = context.util.get_device()
+        device = TorchDevice.choose_torch_device()
         pipeline.to(device)
 
         generator = torch.Generator(device="cpu").manual_seed(self.seed)
