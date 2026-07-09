@@ -24,7 +24,17 @@ class DreamLiteImageGenerationInvocation(BaseInvocation, WithMetadata, WithBoard
     model: ModelIdentifierField = InputField(description="The DreamLite model to use", input=Input.Connection)
     base_model: Optional[ModelIdentifierField] = InputField(
         default=None,
-        description="The DreamLite base model to use for Text Encoder/VAE (required if 'model' is a GGUF UNet)",
+        description="The DreamLite Checkpoint base model to use (Optional)",
+        input=Input.Connection,
+    )
+    text_encoder: Optional[ModelIdentifierField] = InputField(
+        default=None,
+        description="The Text Encoder (QwenVLEncoder) to use (required if base_model is missing)",
+        input=Input.Connection,
+    )
+    vae: Optional[ModelIdentifierField] = InputField(
+        default=None,
+        description="The VAE to use (required if base_model is missing)",
         input=Input.Connection,
     )
     num_inference_steps: int = InputField(default=25, description="Number of inference steps")
@@ -42,27 +52,48 @@ class DreamLiteImageGenerationInvocation(BaseInvocation, WithMetadata, WithBoard
         
         if isinstance(model_obj, dict):
             base_model_id = self.base_model
-            if not base_model_id:
-                from invokeai.backend.model_manager.taxonomy import BaseModelType, ModelType, ModelFormat
-                models = context.services.model_manager.store.search_by_attr(
-                    base_model=BaseModelType.DreamLite,
-                    model_type=ModelType.Main,
-                )
-                valid_models = [m for m in models if m.format == ModelFormat.Checkpoint]
-                if not valid_models:
-                    raise ValueError("A DreamLite base model (safetensors) must be installed to use a GGUF UNet model. Please install a base model or use the Node Editor to wire one.")
+            pipeline = None
+            if base_model_id:
+                pipeline = context.models.load(base_model_id).model
+                if not isinstance(pipeline, DreamLitePipeline):
+                    raise TypeError(f"base_model must be a DreamLitePipeline, got {type(pipeline).__name__}")
+            else:
+                te_id = self.text_encoder
+                vae_id = self.vae
+                from invokeai.backend.model_manager.taxonomy import ModelType
                 
-                base_model_id = ModelIdentifierField(
-                    key=valid_models[0].key,
-                    hash=valid_models[0].hash,
-                    name=valid_models[0].name,
-                    base=valid_models[0].base,
-                    type=valid_models[0].type,
+                if not te_id:
+                    te_models = context.services.model_manager.store.search_by_attr(model_type=ModelType.QwenVLEncoder)
+                    if not te_models:
+                        raise ValueError("No DreamLite Text Encoder found. Please install one or wire it explicitly.")
+                    te_id = ModelIdentifierField(key=te_models[0].key, hash=te_models[0].hash, name=te_models[0].name, base=te_models[0].base, type=te_models[0].type)
+                    
+                if not vae_id:
+                    vae_models = context.services.model_manager.store.search_by_attr(model_type=ModelType.VAE)
+                    # For DreamLite, we just try to find a VAE
+                    vae_models = [m for m in vae_models if "vae" in m.name.lower()]
+                    if not vae_models:
+                        raise ValueError("No DreamLite VAE found. Please install one or wire it explicitly.")
+                    vae_id = ModelIdentifierField(key=vae_models[0].key, hash=vae_models[0].hash, name=vae_models[0].name, base=vae_models[0].base, type=vae_models[0].type)
+                
+                te_model = context.models.load(te_id).model
+                vae_model = context.models.load(vae_id).model
+                
+                from diffusers import FlowMatchEulerDiscreteScheduler
+                from transformers import AutoTokenizer
+                
+                scheduler = FlowMatchEulerDiscreteScheduler(use_dynamic_shifting=True, base_shift=1.0, max_shift=3.0, base_image_seq_len=256, max_image_seq_len=4096)
+                tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen-VL-Chat")
+                unet = DreamLiteUNetModel()
+                
+                pipeline = DreamLitePipeline(
+                    scheduler=scheduler,
+                    vae=vae_model,
+                    text_encoder=te_model,
+                    tokenizer=tokenizer,
+                    unet=unet,
                 )
 
-            pipeline = context.models.load(base_model_id).model
-            if not isinstance(pipeline, DreamLitePipeline):
-                raise TypeError(f"base_model must be a DreamLitePipeline, got {type(pipeline).__name__}")
             pipeline.unet.load_state_dict(model_obj, assign=True)
         else:
             pipeline = model_obj

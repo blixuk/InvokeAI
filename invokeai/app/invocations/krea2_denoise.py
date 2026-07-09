@@ -24,7 +24,17 @@ class Krea2ImageGenerationInvocation(BaseInvocation, WithMetadata, WithBoard):
     model: ModelIdentifierField = InputField(description="The Krea 2 model to use", input=Input.Connection)
     base_model: Optional[ModelIdentifierField] = InputField(
         default=None,
-        description="The Krea 2 base model to use for Text Encoder/VAE (required if 'model' is a GGUF UNet)",
+        description="The Krea 2 Checkpoint base model to use (Optional)",
+        input=Input.Connection,
+    )
+    text_encoder: Optional[ModelIdentifierField] = InputField(
+        default=None,
+        description="The Text Encoder (Qwen3VL) to use (required if base_model is missing)",
+        input=Input.Connection,
+    )
+    vae: Optional[ModelIdentifierField] = InputField(
+        default=None,
+        description="The VAE (QwenImage) to use (required if base_model is missing)",
         input=Input.Connection,
     )
     num_inference_steps: int = InputField(default=10, description="Number of inference steps")
@@ -42,27 +52,47 @@ class Krea2ImageGenerationInvocation(BaseInvocation, WithMetadata, WithBoard):
         
         if isinstance(model_obj, dict):
             base_model_id = self.base_model
-            if not base_model_id:
-                from invokeai.backend.model_manager.taxonomy import BaseModelType, ModelType, ModelFormat
-                models = context.services.model_manager.store.search_by_attr(
-                    base_model=BaseModelType.Krea2,
-                    model_type=ModelType.Main,
-                )
-                valid_models = [m for m in models if m.format == ModelFormat.Checkpoint]
-                if not valid_models:
-                    raise ValueError("A Krea 2 base model (safetensors) must be installed to use a GGUF UNet model. Please install a base model or use the Node Editor to wire one.")
+            pipeline = None
+            if base_model_id:
+                pipeline = context.models.load(base_model_id).model
+                if not isinstance(pipeline, Krea2Pipeline):
+                    raise TypeError(f"base_model must be a Krea2Pipeline, got {type(pipeline).__name__}")
+            else:
+                te_id = self.text_encoder
+                vae_id = self.vae
+                from invokeai.backend.model_manager.taxonomy import ModelType
                 
-                base_model_id = ModelIdentifierField(
-                    key=valid_models[0].key,
-                    hash=valid_models[0].hash,
-                    name=valid_models[0].name,
-                    base=valid_models[0].base,
-                    type=valid_models[0].type,
+                if not te_id:
+                    te_models = context.services.model_manager.store.search_by_attr(model_type=ModelType.Qwen3Encoder)
+                    if not te_models:
+                        raise ValueError("No Krea 2 Text Encoder found. Please install one or wire it explicitly.")
+                    te_id = ModelIdentifierField(key=te_models[0].key, hash=te_models[0].hash, name=te_models[0].name, base=te_models[0].base, type=te_models[0].type)
+                    
+                if not vae_id:
+                    vae_models = context.services.model_manager.store.search_by_attr(model_type=ModelType.VAE)
+                    vae_models = [m for m in vae_models if "qwen" in m.name.lower() or "krea" in m.name.lower()]
+                    if not vae_models:
+                        raise ValueError("No Krea 2 VAE found. Please install one or wire it explicitly.")
+                    vae_id = ModelIdentifierField(key=vae_models[0].key, hash=vae_models[0].hash, name=vae_models[0].name, base=vae_models[0].base, type=vae_models[0].type)
+                
+                te_model = context.models.load(te_id).model
+                vae_model = context.models.load(vae_id).model
+                
+                from diffusers import FlowMatchEulerDiscreteScheduler
+                from transformers import AutoTokenizer
+                
+                scheduler = FlowMatchEulerDiscreteScheduler(use_dynamic_shifting=True, base_shift=0.5, max_shift=1.15, base_image_seq_len=256, max_image_seq_len=6400)
+                tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
+                transformer = Krea2Transformer2DModel()
+                
+                pipeline = Krea2Pipeline(
+                    scheduler=scheduler,
+                    vae=vae_model,
+                    text_encoder=te_model,
+                    tokenizer=tokenizer,
+                    transformer=transformer,
                 )
 
-            pipeline = context.models.load(base_model_id).model
-            if not isinstance(pipeline, Krea2Pipeline):
-                raise TypeError(f"base_model must be a Krea2Pipeline, got {type(pipeline).__name__}")
             pipeline.transformer.load_state_dict(model_obj, assign=True)
         else:
             pipeline = model_obj
