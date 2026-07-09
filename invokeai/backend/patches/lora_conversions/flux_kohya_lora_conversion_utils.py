@@ -18,8 +18,11 @@ from invokeai.backend.patches.model_patch_raw import ModelPatchRaw
 #   lora_unet_double_blocks_0_img_attn_proj.lora_down.weight
 #   lora_unet_double_blocks_0_img_attn_proj.lora_up.weight
 FLUX_KOHYA_TRANSFORMER_KEY_REGEX = (
-    r"lora_unet_(\w+_blocks)_(\d+)_(img_attn|img_mlp|img_mod|txt_attn|txt_mlp|txt_mod|linear1|linear2|modulation)_?(.*)"
+    r"lora_unet_(double_blocks|single_blocks|transformer_blocks|single_transformer_blocks)_(\d+)_(img_attn|img_mlp|img_mod|txt_attn|txt_mlp|txt_mod|linear1|linear2|modulation|attn|mlp|proj_out|norm)_?(.*)"
 )
+
+# A regex pattern that matches embedder keys in Kohya FLUX LoRA format.
+FLUX_KOHYA_EMBEDDER_KEY_REGEX = r"lora_unet_(txt_in|context_embedder|vector_in|time_text_embed_text_embedder_linear_\d)_?(.*)"
 
 # A regex pattern that matches all of the last layer keys in the Kohya FLUX LoRA format.
 # Example keys:
@@ -55,6 +58,7 @@ def is_state_dict_likely_in_flux_kohya_format(state_dict: dict[str | int, Any]) 
         or re.match(FLUX_KOHYA_LAST_LAYER_KEY_REGEX, k)
         or re.match(FLUX_KOHYA_CLIP_KEY_REGEX, k)
         or re.match(FLUX_KOHYA_T5_KEY_REGEX, k)
+        or re.match(FLUX_KOHYA_EMBEDDER_KEY_REGEX, k)
         for k in state_dict.keys()
         if isinstance(k, str)
     )
@@ -144,11 +148,30 @@ def _convert_flux_transformer_kohya_state_dict_to_invoke_format(state_dict: Dict
             s += f".{match.group(4)}"
         return s
 
+    def replace_embedder_func(match: re.Match[str]) -> str:
+        key_base = match.group(1)
+        if "time_text_embed_text_embedder_linear" in key_base:
+            s = key_base.replace("time_text_embed_text_embedder_linear_", "time_text_embed.text_embedder.linear_")
+        else:
+            s = key_base
+        if match.group(2):
+            s += f".{match.group(2)}"
+        return s
+
     converted_dict: dict[str, T] = {}
     for k, v in state_dict.items():
-        match = re.match(FLUX_KOHYA_TRANSFORMER_KEY_REGEX, k)
-        if match:
+        match_t = re.match(FLUX_KOHYA_TRANSFORMER_KEY_REGEX, k)
+        match_e = re.match(FLUX_KOHYA_EMBEDDER_KEY_REGEX, k)
+        match_l = re.match(FLUX_KOHYA_LAST_LAYER_KEY_REGEX, k)
+        
+        if match_t:
             new_key = re.sub(FLUX_KOHYA_TRANSFORMER_KEY_REGEX, replace_func, k)
+            converted_dict[new_key] = v
+        elif match_e:
+            new_key = re.sub(FLUX_KOHYA_EMBEDDER_KEY_REGEX, replace_embedder_func, k)
+            converted_dict[new_key] = v
+        elif match_l:
+            new_key = k.replace("lora_unet_final_layer_linear", "final_layer.linear").replace("_", ".")
             converted_dict[new_key] = v
         else:
             raise ValueError(f"Key '{k}' does not match the expected pattern for FLUX LoRA weights.")
