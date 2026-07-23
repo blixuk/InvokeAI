@@ -24,6 +24,11 @@ import { selectActiveTab } from 'features/ui/store/uiSelectors';
 import { selectListStylePresetsRequestState } from 'services/api/endpoints/stylePresets';
 import type { Invocation } from 'services/api/types';
 import { assert } from 'tsafe';
+import { initialFlux2ReferenceImage, initialFluxKontextReferenceImage, initialIPAdapter, initialQwenImageReferenceImage } from 'features/controlLayers/store/util';
+import { zModelIdentifierField } from 'features/nodes/types/common';
+import { deepClone } from 'common/util/deepClone';
+import type { RefImageState } from 'features/controlLayers/store/types';
+import { selectIPAdapterModels } from 'services/api/hooks/modelsByType';
 
 import type { MainModelLoaderNodes } from './types';
 
@@ -130,6 +135,57 @@ export const selectPresetModifiedPrompts = createSelector(
     };
   }
 );
+
+export const getCharacterRefImages = (state: RootState): RefImageState[] => {
+  const characters = selectCharacterPromptSlice(state).characters;
+  const validChars = characters.filter((c) => c.isReferenceEnabled && c.referenceImageName);
+  
+  if (validChars.length === 0) {
+    return [];
+  }
+
+  const mainModelConfig = selectMainModelConfig(state);
+  const ipAdapterModelConfigs = selectIPAdapterModels(state);
+  const base = mainModelConfig?.base;
+
+  // Build the default config based on the active model
+  let defaultConfig: any = null;
+  if (base === 'flux2') {
+    defaultConfig = deepClone(initialFlux2ReferenceImage);
+  } else if (base === 'qwen-image') {
+    defaultConfig = deepClone(initialQwenImageReferenceImage);
+  } else if (base === 'flux' && mainModelConfig?.name?.toLowerCase().includes('kontext')) {
+    defaultConfig = deepClone(initialFluxKontextReferenceImage);
+    defaultConfig.model = zModelIdentifierField.parse(mainModelConfig);
+  } else {
+    const modelConfig = ipAdapterModelConfigs.find((m) => m.base === base);
+    if (modelConfig) {
+      defaultConfig = deepClone(initialIPAdapter);
+      defaultConfig.model = zModelIdentifierField.parse(modelConfig);
+      if (modelConfig.base === 'flux') {
+        defaultConfig.clipVisionModel = 'ViT-L';
+      }
+    }
+  }
+
+  if (!defaultConfig) {
+    return [];
+  }
+
+  return validChars.map((char) => {
+    const config = deepClone(defaultConfig);
+    config.image = {
+      original: {
+        image: { image_name: char.referenceImageName!, width: 512, height: 512 },
+      },
+    };
+    return {
+      id: char.id,
+      isEnabled: true,
+      config,
+    } as RefImageState;
+  });
+};
 
 export const getOriginalAndScaledSizesForTextToImage = (state: RootState) => {
   const tab = selectActiveTab(state);

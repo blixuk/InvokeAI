@@ -14,6 +14,7 @@ import {
   rgAdded,
   rgRefImageImageChanged,
 } from 'features/controlLayers/store/canvasSlice';
+import { characterUpdated } from 'features/characterPrompt/store/characterPromptSlice';
 import { refImageImageChanged } from 'features/controlLayers/store/refImagesSlice';
 import { selectBboxModelBase, selectBboxRect } from 'features/controlLayers/store/selectors';
 import type {
@@ -322,4 +323,9 @@ export const removeImagesFromBoard = (arg: { image_names: string[]; dispatch: Ap
   const { image_names, dispatch } = arg;
   dispatch(imagesApi.endpoints.removeImagesFromBoard.initiate({ image_names }, { track: false }));
   dispatch(selectionChanged([]));
+};
+
+export const setCharacterReferenceImage = (arg: { id: string; imageDTO: ImageDTO; dispatch: AppDispatch }) => {
+  const { id, imageDTO, dispatch } = arg;
+  dispatch(characterUpdated({ id, changes: { referenceImageName: imageDTO.image_name } }));
 };

@@ -58,6 +58,7 @@ export type Character = z.infer<typeof zCharacter>;
 export const zCharacterPromptState = z.object({
   _version: z.literal(1),
   characters: z.array(zCharacter),
+  savedCharacters: z.array(zCharacter).default([]),
 });
 
 export type CharacterPromptState = z.infer<typeof zCharacterPromptState>;
@@ -65,6 +66,7 @@ export type CharacterPromptState = z.infer<typeof zCharacterPromptState>;
 export const getInitialCharacterPromptState = (): CharacterPromptState => ({
   _version: 1,
   characters: [],
+  savedCharacters: [],
 });
 
 const slice = createSlice({
@@ -121,10 +123,21 @@ const slice = createSlice({
         }
       }
     },
+    characterSaved: (state, action: PayloadAction<Character>) => {
+      // Create a fresh ID for the saved character so it doesn't conflict
+      state.savedCharacters.push({ ...action.payload, id: uuidv4() });
+    },
+    savedCharacterDeleted: (state, action: PayloadAction<string>) => {
+      state.savedCharacters = state.savedCharacters.filter((c) => c.id !== action.payload);
+    },
+    savedCharacterLoaded: (state, action: PayloadAction<Character>) => {
+      // Load a saved character into the active list with a new ID
+      state.characters.push({ ...action.payload, id: uuidv4() });
+    },
   },
 });
 
-export const { characterAdded, characterRemoved, characterUpdated } = slice.actions;
+export const { characterAdded, characterRemoved, characterUpdated, characterSaved, savedCharacterDeleted, savedCharacterLoaded } = slice.actions;
 
 export const selectCharacterPromptSlice = (state: RootState) => state.characterPrompt;
 
@@ -137,6 +150,9 @@ export const characterPromptSliceConfig: SliceConfig<typeof slice> = {
       assert(isPlainObject(state));
       if (!('_version' in state)) {
         state._version = 1;
+      }
+      if (!('savedCharacters' in state)) {
+        state.savedCharacters = [];
       }
       return zCharacterPromptState.parse(state);
     },

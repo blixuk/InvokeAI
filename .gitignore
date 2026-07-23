@@ -61,6 +61,7 @@ cov.xml
 cover/
 junit/
 notes/
+proposals/
 
 # Translations
 *.mo

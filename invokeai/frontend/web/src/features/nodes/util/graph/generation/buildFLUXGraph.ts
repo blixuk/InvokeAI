@@ -28,7 +28,7 @@ import { addRegions } from 'features/nodes/util/graph/generation/addRegions';
 import { addTextToImage } from 'features/nodes/util/graph/generation/addTextToImage';
 import { addWatermarker } from 'features/nodes/util/graph/generation/addWatermarker';
 import { Graph } from 'features/nodes/util/graph/generation/Graph';
-import { selectCanvasOutputFields } from 'features/nodes/util/graph/graphBuilderUtils';
+import { selectCanvasOutputFields, getCharacterRefImages } from 'features/nodes/util/graph/graphBuilderUtils';
 import type { GraphBuilderArg, GraphBuilderReturn, ImageOutputNodes } from 'features/nodes/util/graph/types';
 import { UnsupportedGenerationModeError } from 'features/nodes/util/graph/types';
 import { isFlux2KleinQwen3Compatible } from 'features/parameters/util/flux2Klein';
@@ -336,8 +336,9 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
     addFlux2KleinLoRAs(state, g, flux2Denoise, flux2ModelLoader, flux2Cond);
 
     // FLUX.2 Klein has built-in multi-reference image editing - no separate model needed
-    const validFlux2RefImageConfigs = selectRefImagesSlice(state)
-      .entities.filter((entity) => entity.isEnabled)
+    const characterRefImages = getCharacterRefImages(state);
+    const validFlux2RefImageConfigs = [...selectRefImagesSlice(state).entities, ...characterRefImages]
+      .filter((entity) => entity.isEnabled)
       .filter((entity) => isFlux2ReferenceImageConfig(entity.config))
       .filter((entity) => getGlobalReferenceImageWarnings(entity, model).length === 0);
 
@@ -385,8 +386,8 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
         });
 
         if (canvasOutput.id.includes('resize_image_to_original_size')) {
-          g.deleteEdgesTo(canvasOutput, ['image']);
-          g.addEdge(highResL2i, 'image', canvasOutput, 'image');
+          g.deleteEdgesTo(canvasOutput as Invocation<'img_resize'>, ['image']);
+          g.addEdge(highResL2i, 'image', canvasOutput as Invocation<'img_resize'>, 'image');
         } else {
           canvasOutput = highResL2i;
         }
@@ -610,8 +611,9 @@ export const buildFLUXGraph = async (arg: GraphBuilderArg): Promise<GraphBuilder
       type: 'collect',
       id: getPrefixedId('ip_adapter_collector'),
     });
+    const characterRefImagesForIPAdapters = getCharacterRefImages(state);
     const ipAdapterResult = addIPAdapters({
-      entities: refImages.entities,
+      entities: [...refImages.entities, ...characterRefImagesForIPAdapters],
       g,
       collector: ipAdapterCollect,
       model,

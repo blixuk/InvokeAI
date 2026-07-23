@@ -16,7 +16,7 @@ import { addSeamless } from 'features/nodes/util/graph/generation/addSeamless';
 import { addTextToImage } from 'features/nodes/util/graph/generation/addTextToImage';
 import { addWatermarker } from 'features/nodes/util/graph/generation/addWatermarker';
 import { Graph } from 'features/nodes/util/graph/generation/Graph';
-import { selectCanvasOutputFields, selectPresetModifiedPrompts } from 'features/nodes/util/graph/graphBuilderUtils';
+import { selectCanvasOutputFields, selectPresetModifiedPrompts, getCharacterRefImages } from 'features/nodes/util/graph/graphBuilderUtils';
 import type { GraphBuilderArg, GraphBuilderReturn, ImageOutputNodes } from 'features/nodes/util/graph/types';
 import { selectActiveTab } from 'features/ui/store/uiSelectors';
 import type { Invocation } from 'services/api/types';
@@ -94,6 +94,9 @@ export const buildSD1Graph = async (arg: GraphBuilderArg): Promise<GraphBuilderR
     type: 'noise',
     id: getPrefixedId('noise'),
     use_cpu: shouldUseCpuNoise,
+    seed_resize_enabled: params.seedResizeEnabled,
+    seed_resize_width: params.seedResizeWidth,
+    seed_resize_height: params.seedResizeHeight,
   });
   const denoise = g.addNode({
     type: 'denoise_latents',
@@ -274,8 +277,9 @@ export const buildSD1Graph = async (arg: GraphBuilderArg): Promise<GraphBuilderR
     type: 'collect',
     id: getPrefixedId('ip_adapter_collector'),
   });
+  const characterRefImages = getCharacterRefImages(state);
   const ipAdapterResult = addIPAdapters({
-    entities: refImages.entities,
+    entities: [...refImages.entities, ...characterRefImages],
     g,
     collector: ipAdapterCollect,
     model,

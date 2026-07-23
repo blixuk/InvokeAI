@@ -95,6 +95,8 @@ A dedicated Templates tab provides a full-page grid to create, edit, organize, a
 
 Invoke features a highly granular **Character Prompt Generator** inside the Generate workspace. 
 - **Granular Attribute Control**: Over 30 configurable physical and apparel attributes categorized cleanly into General, Hair, Face & Makeup, and Outfit & Accessories.
+- **Persistent Character Library**: Save, load, and manage custom character presets via the robust Saved Characters modal, ensuring long-term consistency across sessions.
+- **Integrated Visual References**: Drag and drop images straight from the gallery to bind reference images to character profiles. The pipeline automatically translates these references into IP-Adapter or Kontext conditioning for seamless character consistency.
 - **Dynamic Prompt Compilation**: Automatically transforms complex layered clothing, makeup, and physical traits into cohesive and optimized text prompts for image generation.
 - **Live Preview**: A live preview text box shows exactly how the final prompt string is being constructed behind the scenes.
 - **Multiple Characters**: Support for configuring multiple distinct characters within a single generation flow.

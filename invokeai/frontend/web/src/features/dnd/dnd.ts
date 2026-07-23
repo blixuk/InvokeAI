@@ -19,6 +19,7 @@ import {
   setNodeImageFieldImage,
   setRegionalGuidanceReferenceImage,
   setUpscaleInitialImage,
+  setCharacterReferenceImage
 } from 'features/imageActions/actions';
 import { fieldImageCollectionValueChanged } from 'features/nodes/store/nodesSlice';
 import { selectFieldInputInstanceSafe, selectNodesSlice } from 'features/nodes/store/selectors';
@@ -589,15 +590,8 @@ export const removeImageFromBoardDndTarget: DndTarget<
 
 //#region Add Image To Chat
 const _addImageToChat = buildTypeAndKey('add-image-to-chat');
-export type AddImageToChatDndTargetData = DndData<
-  typeof _addImageToChat.type,
-  typeof _addImageToChat.key,
-  void
->;
-export const addImageToChatDndTarget: DndTarget<
-  AddImageToChatDndTargetData,
-  SingleImageDndSourceData
-> = {
+export type AddImageToChatDndTargetData = DndData<typeof _addImageToChat.type, typeof _addImageToChat.key, void>;
+export const addImageToChatDndTarget: DndTarget<AddImageToChatDndTargetData, SingleImageDndSourceData> = {
   ..._addImageToChat,
   typeGuard: buildTypeGuard(_addImageToChat.key),
   getData: buildGetData(_addImageToChat.key, _addImageToChat.type),
@@ -617,6 +611,34 @@ export const addImageToChatDndTarget: DndTarget<
 };
 //#endregion
 
+//#region Set Character Reference Image
+const _setCharacterReferenceImage = buildTypeAndKey('set-character-reference-image');
+export type SetCharacterReferenceImageDndTargetData = DndData<
+  typeof _setCharacterReferenceImage.type,
+  typeof _setCharacterReferenceImage.key,
+  { id: string }
+>;
+export const setCharacterReferenceImageDndTarget: DndTarget<
+  SetCharacterReferenceImageDndTargetData,
+  SingleImageDndSourceData
+> = {
+  ..._setCharacterReferenceImage,
+  typeGuard: buildTypeGuard(_setCharacterReferenceImage.key),
+  getData: buildGetData(_setCharacterReferenceImage.key, _setCharacterReferenceImage.type),
+  isValid: ({ sourceData }) => {
+    if (singleImageDndSource.typeGuard(sourceData)) {
+      return true;
+    }
+    return false;
+  },
+  handler: ({ sourceData, targetData, dispatch }) => {
+    const { imageDTO } = sourceData.payload;
+    const { id } = targetData.payload;
+    setCharacterReferenceImage({ id, imageDTO, dispatch });
+  },
+};
+//#endregion
+
 export const dndTargets = [
   setGlobalReferenceImageDndTarget,
   addGlobalReferenceImageDndTarget,
@@ -631,6 +653,7 @@ export const dndTargets = [
   addImageToBoardDndTarget,
   removeImageFromBoardDndTarget,
   addImageToChatDndTarget,
+  setCharacterReferenceImageDndTarget,
 ] as const;
 
 export type AnyDndTarget = (typeof dndTargets)[number];
