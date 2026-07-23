@@ -86,10 +86,14 @@ _TEXT_ENCODER_DICT = {
 
 def _load_text_encoder(name: str, device: str = "cuda"):
     import torch.distributed as dist
+    import os
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    assert name in _TEXT_ENCODER_DICT, f"Unsupported text encoder: {name}"
-    model_id = _TEXT_ENCODER_DICT[name]
+    if os.path.exists(name):
+        model_id = name
+    else:
+        assert name in _TEXT_ENCODER_DICT, f"Unsupported text encoder: {name}"
+        model_id = _TEXT_ENCODER_DICT[name]
 
     is_distributed = dist.is_initialized()
     is_rank0 = (not is_distributed) or (dist.get_rank() == 0)

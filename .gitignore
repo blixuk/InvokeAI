@@ -195,4 +195,4 @@ installer/InvokeAI-Installer/
 .claude/
 
 # Weblate configuration file
-weblate.ini
+weblate.ini\n# Ignore proposals directory\nproposals/
