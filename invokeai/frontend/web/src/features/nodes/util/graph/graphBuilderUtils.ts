@@ -19,6 +19,7 @@ import type { BoardField } from 'features/nodes/types/common';
 import type { Graph } from 'features/nodes/util/graph/generation/Graph';
 import { buildPresetModifiedPrompt } from 'features/stylePresets/hooks/usePresetModifiedPrompts';
 import { selectStylePresetSlice } from 'features/stylePresets/store/stylePresetSlice';
+import { selectCharacterPromptSlice, buildCharacterPrompt } from 'features/characterPrompt/store/characterPromptSlice';
 import { selectActiveTab } from 'features/ui/store/uiSelectors';
 import { selectListStylePresetsRequestState } from 'services/api/endpoints/stylePresets';
 import type { Invocation } from 'services/api/types';
@@ -85,9 +86,19 @@ export const selectPresetModifiedPrompts = createSelector(
   selectParamsSlice,
   selectStylePresetSlice,
   selectListStylePresetsRequestState,
-  (params, stylePresetSlice, listStylePresetsRequestState) => {
+  selectCharacterPromptSlice,
+  (params, stylePresetSlice, listStylePresetsRequestState, characterPromptSlice) => {
     const negativePrompt = params.negativePrompt ?? '';
-    const { positivePrompt } = params;
+    let { positivePrompt } = params;
+
+    // Append character prompts
+    if (characterPromptSlice.characters.length > 0) {
+      const characterStrings = characterPromptSlice.characters.map((char) => buildCharacterPrompt(char));
+      
+      const charBlock = characterStrings.join(', ');
+      positivePrompt = positivePrompt ? `${positivePrompt}, ${charBlock}` : charBlock;
+    }
+
     const { activeStylePresetId } = stylePresetSlice;
 
     if (activeStylePresetId) {
@@ -131,7 +142,7 @@ export const getOriginalAndScaledSizesForTextToImage = (state: RootState) => {
     const originalSize = { width, height };
     const scaledSize = ['auto', 'manual'].includes(canvas.bbox.scaleMethod) ? canvas.bbox.scaledSize : originalSize;
     return { originalSize, scaledSize, aspectRatio };
-  } else if (tab === 'generate') {
+  } else if (tab === 'generate' || tab === 'manga') {
     const { width, height, aspectRatio } = params.dimensions;
     return {
       originalSize: { width, height },
@@ -140,7 +151,7 @@ export const getOriginalAndScaledSizesForTextToImage = (state: RootState) => {
     };
   }
 
-  assert(false, `Cannot get sizes for tab ${tab} - this function is only for the Canvas or Generate tabs`);
+  assert(false, `Cannot get sizes for tab ${tab} - this function is only for the Canvas, Generate, or Manga tabs`);
 };
 
 export const getOriginalAndScaledSizesForOtherModes = (state: RootState) => {
@@ -216,8 +227,7 @@ export const isMainModelWithoutUnet = (modelLoader: Invocation<MainModelLoaderNo
     modelLoader.type === 'sd3_model_loader' ||
     modelLoader.type === 'cogview4_model_loader' ||
     modelLoader.type === 'qwen_image_model_loader' ||
-    modelLoader.type === 'z_image_model_loader' ||
-    modelLoader.type === 'anima_model_loader'
+    modelLoader.type === 'z_image_model_loader'
   );
 };
 

@@ -91,6 +91,14 @@ Invoke now features a native, fully integrated **Spectral-Energy Guided Attentio
 
 A dedicated Templates tab provides a full-page grid to create, edit, organize, and delete prompt templates and style presets. Includes a "Style Reference" toggle to automatically inject template cover images into the generation context via IP-Adapter or Kontext conditioning.
 
+### Character Prompt Generation
+
+Invoke features a highly granular **Character Prompt Generator** inside the Generate workspace. 
+- **Granular Attribute Control**: Over 30 configurable physical and apparel attributes categorized cleanly into General, Hair, Face & Makeup, and Outfit & Accessories.
+- **Dynamic Prompt Compilation**: Automatically transforms complex layered clothing, makeup, and physical traits into cohesive and optimized text prompts for image generation.
+- **Live Preview**: A live preview text box shows exactly how the final prompt string is being constructed behind the scenes.
+- **Multiple Characters**: Support for configuring multiple distinct characters within a single generation flow.
+
 ### CivitAI Integration
 
 Streamlined downloading of models directly from CivitAI. Supports authenticated downloads for restricted content using API tokens, gracefully bypassing HTML login traps and ensuring seamless integration into the Model Manager.
